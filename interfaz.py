@@ -11,23 +11,52 @@ from config_manager import obtener_centro_activo, cambiar_centro, listar_centros
 
 def clasificar_pdf(ruta):
     """
-    Analiza el contenido del PDF y determina si es informe, mosaico o VR.
+    Analiza el PDF y determina si es informe, mosaico o VR.
     - Informe: contiene 'Nombre:' y 'FECHA:'
-    - VR: una sola página sin texto significativo
-    - Mosaico: múltiples páginas sin texto significativo
+    - VR: tiene píxeles a color (R, G, B distintos)
+    - Mosaico: escala de grises
     """
     try:
         with pdfplumber.open(ruta) as pdf:
-            num_paginas = len(pdf.pages)
             texto = pdf.pages[0].extract_text() or ""
 
+        # Primero verificar si es informe
         if re.search(r'Nombre:', texto) and re.search(r'FECHA:', texto):
             return "informe"
-        elif num_paginas == 1:
+
+        # Convertir primera página a imagen para analizar color
+        from pypdfium2 import PdfDocument
+        from PIL import Image
+        import numpy as np
+
+        doc = PdfDocument(ruta)
+        page = doc[0]
+        bitmap = page.render(scale=0.5)  # escala reducida para rapidez
+        img = bitmap.to_pil()
+
+        # Convertir a numpy y analizar saturación de color
+        img_rgb = img.convert("RGB")
+        arr = np.array(img_rgb)
+        datos = [(int(r), int(g), int(b)) for r, g, b in arr.reshape(-1, 3)]
+
+        # Contar píxeles con color significativo
+        # Un píxel es "de color" si la diferencia entre sus canales RGB es > umbral
+        umbral = 20
+        pixeles_color = sum(
+            1 for r, g, b in datos
+            if max(r, g, b) - min(r, g, b) > umbral
+        )
+
+        porcentaje_color = pixeles_color / len(datos)
+
+        # Si más del 2% de píxeles tienen color, es VR
+        if porcentaje_color > 0.02:
             return "vr"
         else:
             return "mosaico"
-    except:
+
+    except Exception as e:
+        print(f"Error clasificando {ruta}: {e}")
         return "desconocido"
 
 

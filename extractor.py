@@ -14,13 +14,14 @@ def extraer_datos(ruta_pdf):
     nombre_match = re.search(r'Nombre:\s*(.+?)(?:\s{2,}|\t|Médico|$)', texto)
     nombre = nombre_match.group(1).strip() if nombre_match else "DESCONOCIDO"
 
-    # Buscar fecha del estudio
-    fecha_match = re.search(r'FECHA:\s*(\d{1,2}/\d{1,2}/\d{2,4})', texto)
+    # Buscar fecha del estudio (acepta / o . como separador)
+    fecha_match = re.search(r'FECHA:\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})', texto)
     fecha_raw = fecha_match.group(1).strip() if fecha_match else None
 
     # Convertir fecha a formato "Abril_2026"
     if fecha_raw:
-        fecha_obj = datetime.strptime(fecha_raw, "%d/%m/%y")
+        fecha_normalizada = fecha_raw.replace(".", "/")
+        fecha_obj = datetime.strptime(fecha_normalizada, "%d/%m/%y")
         meses = {
             1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
             5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
