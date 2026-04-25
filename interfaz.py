@@ -295,10 +295,64 @@ class AplicacionPDF(TkinterDnD.Tk):
                     for pagina in reader.pages:
                         writer.add_page(pagina)
 
-            with open(ruta_final, "wb") as f:
+            # Guardar PDF unido temporalmente
+            ruta_temp_unido = "_temp_unido.pdf"
+            with open(ruta_temp_unido, "wb") as f:
                 writer.write(f)
 
+            # Aplicar marca de agua a todas las páginas excepto la carátula
+            from marca_agua import agregar_marca_agua
+            from pypdf import PdfWriter as PdfWriterFinal, PdfReader as PdfReaderFinal
+            from marca_agua import remover_fondo_blanco
+            from reportlab.pdfgen import canvas as rl_canvas
+            from reportlab.lib.utils import ImageReader
+            import io
+
+            reader_temp = PdfReaderFinal(ruta_temp_unido)
+            writer_final = PdfWriterFinal()
+
+           # Guardar PDF unido temporalmente
+            ruta_temp_unido = "_temp_unido.pdf"
+            with open(ruta_temp_unido, "wb") as f:
+                writer.write(f)
+
+            # Aplicar marca de agua solo al informe (página 2, índice 1)
+            from marca_agua import remover_fondo_blanco
+            from reportlab.pdfgen import canvas as rl_canvas
+            from reportlab.lib.utils import ImageReader
+            import io
+
+            reader_temp = PdfReaderFinal(ruta_temp_unido)
+            writer_final = PdfWriterFinal()
+
+            for i, pagina in enumerate(reader_temp.pages):
+                if i == 1:
+                    # Solo el informe recibe marca de agua
+                    ancho = float(pagina.mediabox.width)
+                    alto = float(pagina.mediabox.height)
+                    buf = io.BytesIO()
+                    c = rl_canvas.Canvas(buf, pagesize=(ancho, alto))
+                    c.setFillAlpha(0.06)
+                    ruta_logo = self.centro["logo"]
+                    if ruta_logo and os.path.exists(ruta_logo):
+                        logo_buf = remover_fondo_blanco(ruta_logo)
+                        logo = ImageReader(logo_buf)
+                        tam = min(ancho, alto) * 0.6
+                        x = (ancho - tam) / 2
+                        y = (alto - tam) / 2
+                        c.drawImage(logo, x, y, width=tam, height=tam,
+                                   preserveAspectRatio=True, mask='auto')
+                    c.save()
+                    buf.seek(0)
+                    pagina_marca = PdfReaderFinal(buf).pages[0]
+                    pagina.merge_page(pagina_marca)
+                writer_final.add_page(pagina)
+
+            with open(ruta_final, "wb") as f:
+                writer_final.write(f)
+
             os.remove(ruta_caratula_temp)
+            os.remove(ruta_temp_unido)
 
             self.label_estado.config(
                 text=f"✅ Reporte generado: {nombre_archivo}")
