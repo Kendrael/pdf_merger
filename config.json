@@ -1,0 +1,20 @@
+{
+    "centro_activo": "SIRIX",
+    "centros": {
+        "SIRIX": {
+            "nombre": "SIRIX",
+            "subtitulo": "Diagnóstico e Intervencionismo",
+            "logo": "logo_sirix.jpg"
+        },
+        "CERADI": {
+            "nombre": "CERADI",
+            "subtitulo": "Complejo Medico",
+            "logo": "logo_ceradi.jpg"
+        },
+        "CERADI-CIES": {
+            "nombre": "CERADI - CIES",
+            "subtitulo": "Clinica CIES San Pedro",
+            "logo": "logo_ceradi.jpg"
+        }
+    }
+}

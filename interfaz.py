@@ -1,98 +1,238 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import messagebox
+from tkinterdnd2 import TkinterDnD, DND_FILES
 import os
+import re
+import pdfplumber
 from extractor import extraer_datos
 from caratula import generar_caratula
 from merger import unir_pdfs
+from config_manager import obtener_centro_activo, cambiar_centro, listar_centros
 
-class AplicacionPDF(tk.Tk):
+def clasificar_pdf(ruta):
+    """
+    Analiza el contenido del PDF y determina si es informe, mosaico o VR.
+    - Informe: contiene 'Nombre:' y 'FECHA:'
+    - VR: una sola página sin texto significativo
+    - Mosaico: múltiples páginas sin texto significativo
+    """
+    try:
+        with pdfplumber.open(ruta) as pdf:
+            num_paginas = len(pdf.pages)
+            texto = pdf.pages[0].extract_text() or ""
+
+        if re.search(r'Nombre:', texto) and re.search(r'FECHA:', texto):
+            return "informe"
+        elif num_paginas == 1:
+            return "vr"
+        else:
+            return "mosaico"
+    except:
+        return "desconocido"
+
+
+class AplicacionPDF(TkinterDnD.Tk):
     def __init__(self):
         super().__init__()
-        self.title("SIRIX - Generador de Reportes")
-        self.geometry("600x500")
-        self.resizable(False, False)
+        self.title("Generador de Reportes")
+        self.geometry("650x600")
+        self.resizable(True, True)
         self.configure(bg="#1A3C6E")
 
-        # Variables para rutas de archivos
-        self.ruta_informe = tk.StringVar()
-        self.ruta_mosaico = tk.StringVar()
-        self.ruta_vr = tk.StringVar()
+        # Almacenamiento de archivos clasificados
+        self.informe = None
+        self.mosaicos = []
+        self.vr = None
+        self.centro = obtener_centro_activo()
+
+        self.var_centro = tk.StringVar(value=self.centro["nombre"])
 
         self._construir_interfaz()
 
     def _construir_interfaz(self):
-        # --- Título ---
-        tk.Label(self, text="SIRIX", font=("Helvetica", 22, "bold"),
-                bg="#1A3C6E", fg="white").pack(pady=(20, 0))
-        tk.Label(self, text="Diagnóstico e Intervencionismo",
-                font=("Helvetica", 11), bg="#1A3C6E", fg="white").pack()
-        tk.Label(self, text="Generador de Reportes Tomográficos",
-                font=("Helvetica", 10), bg="#1A3C6E", fg="#A8C4E0").pack(pady=(0, 20))
+        self.label_nombre_centro = tk.Label(self, text=self.centro["nombre"],
+                font=("Helvetica", 22, "bold"), bg="#1A3C6E", fg="white")
+        self.label_nombre_centro.pack(pady=(20, 0))
 
-        # --- Panel central blanco ---
-        panel = tk.Frame(self, bg="white", padx=20, pady=20)
+        self.label_subtitulo_centro = tk.Label(self, text=self.centro["subtitulo"],
+                font=("Helvetica", 11), bg="#1A3C6E", fg="white")
+        self.label_subtitulo_centro.pack()
+
+        tk.Label(self, text="Generador de Reportes",
+                font=("Helvetica", 10), bg="#1A3C6E", fg="#A8C4E0").pack(pady=(0, 5))
+
+        # --- Botón configuración esquina superior derecha ---
+        btn_config = tk.Menubutton(self, text="⚙ Centro", bg="#1A3C6E", fg="#A8C4E0",
+                                  font=("Helvetica", 8), relief="flat",
+                                  activebackground="#1A3C6E", activeforeground="white")
+        btn_config.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
+
+        menu_centros = tk.Menu(btn_config, tearoff=0)
+        for nombre in listar_centros():
+            menu_centros.add_radiobutton(label=nombre,
+                                        variable=self.var_centro,
+                                        value=nombre,
+                                        command=self._cambiar_centro)
+        btn_config.config(menu=menu_centros)
+
+        # --- Zona de drag & drop ---
+        self.zona_drop = tk.Label(
+            self,
+            text="Arrastra aquí los archivos PDF\n(informe, mosaicos y VR)",
+            font=("Helvetica", 12),
+            bg="white", fg="#1A3C6E",
+            relief="solid", bd=2,
+            width=50, height=4
+        )
+        self.zona_drop.pack(padx=20, pady=(10, 0))
+        self.zona_drop.drop_target_register(DND_FILES)
+        self.zona_drop.dnd_bind('<<Drop>>', self._on_drop)
+
+        # --- Botones de selección manual ---
+        panel_botones = tk.Frame(self, bg="#1A3C6E")
+        panel_botones.pack(padx=20, pady=8, fill="x")
+
+        tk.Button(panel_botones, text="+ Informe", bg="white", fg="#1A3C6E",
+                 font=("Helvetica", 9, "bold"),
+                 command=self._seleccionar_informe).pack(side="left", padx=5)
+        tk.Button(panel_botones, text="+ Mosaico(s)", bg="white", fg="#1A3C6E",
+                 font=("Helvetica", 9, "bold"),
+                 command=self._seleccionar_mosaicos).pack(side="left", padx=5)
+        tk.Button(panel_botones, text="+ VR", bg="white", fg="#1A3C6E",
+                 font=("Helvetica", 9, "bold"),
+                 command=self._seleccionar_vr).pack(side="left", padx=5)
+        tk.Button(panel_botones, text="Limpiar", bg="#A8C4E0", fg="#1A3C6E",
+                 font=("Helvetica", 9),
+                 command=self._limpiar).pack(side="right", padx=5)
+
+        # --- Panel de archivos detectados ---
+        panel = tk.Frame(self, bg="white", padx=20, pady=15)
         panel.pack(padx=20, fill="both", expand=True)
 
-        # --- Selector de informe ---
-        tk.Label(panel, text="Informe:", font=("Helvetica", 10, "bold"),
-                bg="white", anchor="w").grid(row=0, column=0, sticky="w", pady=5)
-        tk.Entry(panel, textvariable=self.ruta_informe, width=45,
-                state="readonly").grid(row=0, column=1, padx=5)
-        tk.Button(panel, text="Seleccionar", bg="#1A3C6E", fg="white",
-                 command=self._seleccionar_informe).grid(row=0, column=2)
+        tk.Label(panel, text="Archivos detectados:",
+                font=("Helvetica", 10, "bold"), bg="white",
+                fg="#1A3C6E").pack(anchor="w")
 
-        # --- Selector de mosaico ---
-        tk.Label(panel, text="Mosaico:", font=("Helvetica", 10, "bold"),
-                bg="white", anchor="w").grid(row=1, column=0, sticky="w", pady=5)
-        tk.Entry(panel, textvariable=self.ruta_mosaico, width=45,
-                state="readonly").grid(row=1, column=1, padx=5)
-        tk.Button(panel, text="Seleccionar", bg="#1A3C6E", fg="white",
-                 command=self._seleccionar_mosaico).grid(row=1, column=2)
-
-        # --- Selector de VR ---
-        tk.Label(panel, text="VR:", font=("Helvetica", 10, "bold"),
-                bg="white", anchor="w").grid(row=2, column=0, sticky="w", pady=5)
-        tk.Entry(panel, textvariable=self.ruta_vr, width=45,
-                state="readonly").grid(row=2, column=1, padx=5)
-        tk.Button(panel, text="Seleccionar", bg="#1A3C6E", fg="white",
-                 command=self._seleccionar_vr).grid(row=2, column=2)
+        self.texto_archivos = tk.Text(panel, height=8, width=70,
+                                      state="disabled", bg="#F5F8FC",
+                                      font=("Helvetica", 9), relief="flat")
+        self.texto_archivos.pack(pady=5)
 
         # --- Botón generar ---
-        tk.Button(panel, text="GENERAR REPORTE", font=("Helvetica", 12, "bold"),
-                 bg="#1A3C6E", fg="white", padx=20, pady=10,
-                 command=self._generar).grid(row=3, column=0, columnspan=3, pady=20)
+        tk.Button(self, text="GENERAR REPORTE",
+                 font=("Helvetica", 12, "bold"),
+                 bg="white", fg="#1A3C6E",
+                 padx=20, pady=10,
+                 command=self._generar).pack(pady=10)
 
         # --- Estado ---
-        self.label_estado = tk.Label(panel, text="", font=("Helvetica", 10),
-                                    bg="white", fg="#1A3C6E", wraplength=500)
-        self.label_estado.grid(row=4, column=0, columnspan=3)
+        self.label_estado = tk.Label(self, text="",
+                                    font=("Helvetica", 10),
+                                    bg="#1A3C6E", fg="white",
+                                    wraplength=580)
+        self.label_estado.pack(pady=5)
 
     def _seleccionar_informe(self):
+        from tkinter import filedialog
         ruta = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
         if ruta:
-            self.ruta_informe.set(ruta)
+            self.informe = ruta
+            self._actualizar_panel()
 
-    def _seleccionar_mosaico(self):
-        ruta = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
-        if ruta:
-            self.ruta_mosaico.set(ruta)
+    def _seleccionar_mosaicos(self):
+        from tkinter import filedialog
+        rutas = filedialog.askopenfilenames(filetypes=[("PDF", "*.pdf")])
+        if rutas:
+            self.mosaicos.extend(rutas)
+            self._actualizar_panel()
 
     def _seleccionar_vr(self):
+        from tkinter import filedialog
         ruta = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
         if ruta:
-            self.ruta_vr.set(ruta)
+            self.vr = ruta
+            self._actualizar_panel()
 
+    def _limpiar(self):
+        self.informe = None
+        self.mosaicos = []
+        self.vr = None
+        self._actualizar_panel()
+        self.label_estado.config(text="")
+        
+    def _on_drop(self, event):
+        """Recibe los archivos arrastrados, los clasifica y muestra el resultado."""
+        # Parsear rutas (pueden venir con llaves si tienen espacios)
+        rutas_raw = self.tk.splitlist(event.data)
+
+        self.informe = None
+        self.mosaicos = []
+        self.vr = None
+
+        self.label_estado.config(text="Clasificando archivos...")
+        self.update()
+
+        for ruta in rutas_raw:
+            ruta = ruta.strip()
+            if not ruta.lower().endswith(".pdf"):
+                continue
+            tipo = clasificar_pdf(ruta)
+            if tipo == "informe":
+                self.informe = ruta
+            elif tipo == "mosaico":
+                self.mosaicos.append(ruta)
+            elif tipo == "vr":
+                self.vr = ruta
+
+        self._actualizar_panel()
+        self.label_estado.config(text="")
+
+    def _actualizar_panel(self):
+        """Muestra en el panel los archivos clasificados."""
+        self.texto_archivos.config(state="normal")
+        self.texto_archivos.delete("1.0", tk.END)
+
+        if self.informe:
+            self.texto_archivos.insert("1.0",
+                f"INFORME:  {os.path.basename(self.informe)}\n\n")
+        else:
+            self.texto_archivos.insert("1.0", "Informe:  no detectado\n\n")
+
+        if self.mosaicos:
+            for i, m in enumerate(self.mosaicos, 1):
+                self.texto_archivos.insert(tk.END,
+                    f"MOSAICO {i}: {os.path.basename(m)}\n")
+            self.texto_archivos.insert(tk.END, "\n")
+        else:
+            self.texto_archivos.insert(tk.END, "Mosaico: no detectado\n\n")
+
+        if self.vr:
+            self.texto_archivos.insert(tk.END,
+                f"VR:       {os.path.basename(self.vr)}\n")
+        else:
+            self.texto_archivos.insert(tk.END, "VR:      no detectado\n")
+
+        self.texto_archivos.config(state="disabled")
+        self.update_idletasks()
+
+    def _cambiar_centro(self):
+        nombre = self.var_centro.get()
+        cambiar_centro(nombre)
+        self.centro = obtener_centro_activo()
+        self.label_nombre_centro.config(text=self.centro["nombre"])
+        self.label_subtitulo_centro.config(text=self.centro["subtitulo"])
+        self.label_estado.config(text=f"✅ Centro activo: {self.centro['nombre']}")
+    
     def _generar(self):
-        if not self.ruta_informe.get():
-            messagebox.showwarning("Atención", "El informe es obligatorio.")
+        if not self.informe:
+            messagebox.showwarning("Atención", "No se detectó ningún informe.")
             return
 
         self.label_estado.config(text="Extrayendo datos del informe...")
         self.update()
 
         try:
-            # Extraer nombre y fecha del informe
-            datos = extraer_datos(self.ruta_informe.get())
+            datos = extraer_datos(self.informe)
             nombre = datos["nombre"]
             fecha = datos["fecha"]
 
@@ -103,31 +243,34 @@ class AplicacionPDF(tk.Tk):
                 nombre_paciente=nombre,
                 fecha=fecha.replace("_", " "),
                 tipo_estudio="CT - Estudio Tomográfico",
-                ruta_logo="logo_sirix.jpg"
+                ruta_logo=self.centro["logo"]
             )
 
-            # Nombre del archivo final
+            # Nombre y ubicación del archivo final
             nombre_archivo = f"{nombre.replace(' ', '_')}_{fecha}.pdf"
-            carpeta = os.path.dirname(self.ruta_informe.get())
+            carpeta = os.path.dirname(self.informe)
             ruta_final = os.path.join(carpeta, nombre_archivo)
 
-            # Unir PDFs
+            # Unir en orden: carátula → informe → mosaicos → VR
             self.label_estado.config(text="Uniendo archivos...")
             self.update()
 
-            unir_pdfs(
-                ruta_caratula=ruta_caratula_temp,
-                ruta_informe=self.ruta_informe.get(),
-                ruta_mosaico=self.ruta_mosaico.get() or None,
-                ruta_vr=self.ruta_vr.get() or None,
-                ruta_salida=ruta_final
-            )
+            from pypdf import PdfWriter, PdfReader
+            writer = PdfWriter()
 
-            # Limpiar carátula temporal
+            for ruta in [ruta_caratula_temp, self.informe] + self.mosaicos + [self.vr]:
+                if ruta and os.path.exists(ruta):
+                    reader = PdfReader(ruta)
+                    for pagina in reader.pages:
+                        writer.add_page(pagina)
+
+            with open(ruta_final, "wb") as f:
+                writer.write(f)
+
             os.remove(ruta_caratula_temp)
 
             self.label_estado.config(
-                text=f"✅ Reporte generado:\n{nombre_archivo}")
+                text=f"✅ Reporte generado: {nombre_archivo}")
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
