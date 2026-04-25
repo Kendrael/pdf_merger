@@ -271,8 +271,10 @@ class AplicacionPDF(TkinterDnD.Tk):
                 ruta_salida=ruta_caratula_temp,
                 nombre_paciente=nombre,
                 fecha=fecha.replace("_", " "),
-                tipo_estudio="CT - Estudio Tomográfico",
-                ruta_logo=self.centro["logo"]
+                tipo_estudio=datos["estudio"],
+                ruta_logo=self.centro["logo"],
+                nombre_centro=self.centro["nombre"],
+                subtitulo_centro=self.centro["subtitulo"]
             )
 
             # Nombre y ubicación del archivo final

@@ -5,7 +5,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 import os
 
-def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio, ruta_logo=None):
+def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio, ruta_logo=None, nombre_centro="SIRIX", subtitulo_centro="Diagnóstico e Intervencionismo"):
     """
     Genera una página de carátula en PDF con los datos del estudio.
     """
@@ -25,14 +25,14 @@ def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio, ruta_log
     # --- Nombre del centro en la franja ---
     c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(ancho/2, alto - 2*cm, "SIRIX")
+    c.drawCentredString(ancho/2, alto - 2*cm, nombre_centro)
     c.setFont("Helvetica", 11)
-    c.drawCentredString(ancho/2, alto - 2.8*cm, "Diagnóstico e Intervencionismo")
+    c.drawCentredString(ancho/2, alto - 2.8*cm, subtitulo_centro)
 
     # --- Título del documento ---
     c.setFillColor(colors.HexColor("#1A3C6E"))
     c.setFont("Helvetica-Bold", 20)
-    c.drawCentredString(ancho/2, alto - 7*cm, "REPORTE DE TOMOGRAFÍA")
+    c.drawCentredString(ancho/2, alto - 7*cm, "REPORTE DE IMAGENOLOGIA")
 
     # --- Línea divisoria ---
     c.setStrokeColor(colors.HexColor("#1A3C6E"))
@@ -57,13 +57,18 @@ def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio, ruta_log
 
     c.setFont("Helvetica-Bold", 11)
     c.drawString(2*cm, alto - 13.5*cm, "Estudio:")
+    from reportlab.lib.utils import simpleSplit
     c.setFont("Helvetica", 11)
-    c.drawString(6*cm, alto - 13.5*cm, tipo_estudio)
+    lineas = simpleSplit(tipo_estudio, "Helvetica", 11, ancho - 8*cm)
+    y_estudio = alto - 13.5*cm
+    for linea in lineas:
+        c.drawString(6*cm, y_estudio, linea)
+        y_estudio -= 0.5*cm
 
-    # --- Línea divisoria inferior ---
+    # --- Línea divisoria inferior - posición dinámica ---
     c.setStrokeColor(colors.HexColor("#1A3C6E"))
     c.setLineWidth(1)
-    c.line(2*cm, alto - 14.5*cm, ancho - 2*cm, alto - 14.5*cm)
+    c.line(2*cm, y_estudio - 0.3*cm, ancho - 2*cm, y_estudio - 0.3*cm)
 
     # --- Pie de página ---
     c.setFillColor(colors.HexColor("#1A3C6E"))
