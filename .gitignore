@@ -1,0 +1,9 @@
+# Archivos de prueba y PDFs generados
+*.pdf
+_caratula_temp.pdf
+_temp_unido.pdf
+
+# Archivos de sistema
+.DS_Store
+__pycache__/
+*.pyc
