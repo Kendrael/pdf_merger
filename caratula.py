@@ -6,27 +6,30 @@ from reportlab.lib.utils import ImageReader
 import os
 
 def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio, ruta_logo=None, nombre_centro="SIRIX", subtitulo_centro="Diagnóstico e Intervencionismo"):
+    """
+    Genera una página de carátula en PDF con los datos del estudio.
+    """
     import sys
     if getattr(sys, 'frozen', False):
-        mac_os = os.path.dirname(sys.executable)
-        resources = os.path.join(os.path.dirname(mac_os), 'Resources')
-        frameworks = os.path.join(os.path.dirname(mac_os), 'Frameworks')
-        
-        for directorio in [mac_os, resources, frameworks]:
-            posible = os.path.join(directorio, 'logo_sirix.jpg')
-            if os.path.exists(posible):
+        executable = sys.executable
+        contenido_macos = os.path.dirname(executable)
+        contenido = os.path.dirname(contenido_macos)
+        resources = os.path.join(contenido, 'Resources')
+        frameworks = os.path.join(contenido, 'Frameworks')
+        app = os.path.dirname(contenido)
+        junto_a_app = os.path.dirname(app)
+
+        BASE_DIR = contenido_macos
+        for directorio in [resources, frameworks, contenido_macos, junto_a_app]:
+            if os.path.exists(os.path.join(directorio, 'logo_sirix.jpg')):
                 BASE_DIR = directorio
                 break
-        else:
-            BASE_DIR = mac_os
     else:
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
     if ruta_logo and not os.path.isabs(ruta_logo):
         ruta_logo = os.path.join(BASE_DIR, ruta_logo)
-    """
-    Genera una página de carátula en PDF con los datos del estudio.
-    """
+
     c = canvas.Canvas(ruta_salida, pagesize=letter)
     ancho, alto = letter
 

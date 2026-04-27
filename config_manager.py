@@ -3,20 +3,24 @@ import os
 import sys
 
 if getattr(sys, 'frozen', False):
-    # Buscar en varias ubicaciones posibles dentro del bundle
-    mac_os = os.path.dirname(sys.executable)
-    resources = os.path.join(os.path.dirname(mac_os), 'Resources')
-    frameworks = os.path.join(os.path.dirname(mac_os), 'Frameworks')
+    # Buscar en todas las ubicaciones posibles
+    executable = sys.executable
+    contenido_macos = os.path.dirname(executable)
+    contenido = os.path.dirname(contenido_macos)
+    resources = os.path.join(contenido, 'Resources')
+    frameworks = os.path.join(contenido, 'Frameworks')
+    app = os.path.dirname(contenido)
+    junto_a_app = os.path.dirname(app)
     
-    for directorio in [mac_os, resources, frameworks]:
-        posible = os.path.join(directorio, 'config.json')
-        if os.path.exists(posible):
+    BASE_DIR = contenido_macos  # default
+    for directorio in [resources, frameworks, contenido_macos, junto_a_app]:
+        if os.path.exists(os.path.join(directorio, 'config.json')):
             BASE_DIR = directorio
             break
-    else:
-        BASE_DIR = mac_os
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+RUTA_CONFIG = os.path.join(BASE_DIR, "config.json")
 
 def cargar_config():
     """Lee el archivo de configuración y retorna el diccionario."""
