@@ -307,8 +307,16 @@ class AplicacionPDF(TkinterDnD.Tk):
 
             # Nombre y ubicación del archivo final
             nombre_archivo = f"{nombre.replace(' ', '_')}_{fecha}.pdf"
-            carpeta = os.path.dirname(self.informe)
-            ruta_final = os.path.join(carpeta, nombre_archivo)
+            from tkinter import filedialog
+            ruta_final = filedialog.asksaveasfilename(
+                initialfile=nombre_archivo,
+                defaultextension=".pdf",
+                filetypes=[("PDF", "*.pdf")],
+                title="Guardar reporte como"
+            )
+            if not ruta_final:
+                self.label_estado.config(text="")
+                return
 
             # Unir en orden: carátula → informe → mosaicos → VR
             self.label_estado.config(text="Uniendo archivos...")
