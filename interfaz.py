@@ -46,14 +46,14 @@ def clasificar_pdf(ruta):
             datos = arr.reshape(-1, 3)
 
             # Contar píxeles con color significativo
-            umbral = 20
+            umbral = 10
             pixeles_color = sum(
                 1 for r, g, b in datos
                 if max(int(r), int(g), int(b)) - min(int(r), int(g), int(b)) > umbral
             )
             porcentaje_color = pixeles_color / len(datos)
 
-            if porcentaje_color > 0.02:
+            if porcentaje_color > 0.005:
                 return "vr"
             else:
                 return "mosaico"
@@ -293,7 +293,8 @@ class AplicacionPDF(TkinterDnD.Tk):
             fecha = datos["fecha"]
 
             # Generar carátula temporal
-            ruta_caratula_temp = "_caratula_temp.pdf"
+            import tempfile
+            ruta_caratula_temp = os.path.join(tempfile.gettempdir(), "_caratula_temp.pdf")
             generar_caratula(
                 ruta_salida=ruta_caratula_temp,
                 nombre_paciente=nombre,
@@ -323,7 +324,7 @@ class AplicacionPDF(TkinterDnD.Tk):
                         writer.add_page(pagina)
 
             # Guardar PDF unido temporalmente
-            ruta_temp_unido = "_temp_unido.pdf"
+            ruta_temp_unido = os.path.join(tempfile.gettempdir(), "_temp_unido.pdf")
             with open(ruta_temp_unido, "wb") as f:
                 writer.write(f)
 
