@@ -6,6 +6,14 @@ from reportlab.lib.utils import ImageReader
 import os
 
 def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio, ruta_logo=None, nombre_centro="SIRIX", subtitulo_centro="Diagnóstico e Intervencionismo"):
+    import sys
+    if getattr(sys, 'frozen', False):
+        BASE_DIR = os.path.dirname(sys.executable)
+    else:
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    if ruta_logo and not os.path.isabs(ruta_logo):
+        ruta_logo = os.path.join(BASE_DIR, ruta_logo)
     """
     Genera una página de carátula en PDF con los datos del estudio.
     """

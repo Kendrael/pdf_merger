@@ -61,7 +61,7 @@ pdf_merger/
 
 ## Autor / Author
 
-A. Kenny Mejia R. — Bioimagenólogo & Health Data Specialist, La Paz, Bolivia
+Kenny Mejia — Bioimagenólogo & Health Data Specialist, La Paz, Bolivia
 
 ---
 

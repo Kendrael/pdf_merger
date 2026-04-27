@@ -1,7 +1,13 @@
 import json
 import os
+import sys
 
-RUTA_CONFIG = "config.json"
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+RUTA_CONFIG = os.path.join(BASE_DIR, "config.json")
 
 def cargar_config():
     """Lee el archivo de configuración y retorna el diccionario."""

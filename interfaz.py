@@ -94,7 +94,7 @@ class AplicacionPDF(TkinterDnD.Tk):
         btn_config = tk.Menubutton(self, text="⚙ Centro", bg="#1A3C6E", fg="#A8C4E0",
                                   font=("Helvetica", 8), relief="flat",
                                   activebackground="#1A3C6E", activeforeground="white")
-        btn_config.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
+        btn_config.place(relx=0.0, rely=0.0, anchor="nw", x=10, y=10)
 
         menu_centros = tk.Menu(btn_config, tearoff=0)
         for nombre in listar_centros():
@@ -103,6 +103,13 @@ class AplicacionPDF(TkinterDnD.Tk):
                                         value=nombre,
                                         command=self._cambiar_centro)
         btn_config.config(menu=menu_centros)
+
+        # --- Botón About ---
+        btn_about = tk.Button(self, text="?", bg="#1A3C6E", fg="#A8C4E0",
+                             font=("Helvetica", 8), relief="flat",
+                             activebackground="#1A3C6E", activeforeground="white",
+                             command=self._mostrar_about)
+        btn_about.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
 
         # --- Zona de drag & drop ---
         self.zona_drop = tk.Label(
@@ -252,6 +259,18 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.label_subtitulo_centro.config(text=self.centro["subtitulo"])
         self.label_estado.config(text=f"✅ Centro activo: {self.centro['nombre']}")
     
+    def _mostrar_about(self):
+        from tkinter import messagebox
+        messagebox.showinfo(
+            "Acerca de",
+            "Generador de Reportes Imagenológicos\n"
+            "Versión 0.3.1\n\n"
+            "Desarrollado por Kenny Mejia\n"
+            "Bioimagenólogo & Health Data Specialist\n"
+            "La Paz, Bolivia\n\n"
+            "github.com/Kendrael/pdf_merger"
+        )
+
     def _generar(self):
         if not self.informe:
             messagebox.showwarning("Atención", "No se detectó ningún informe.")
