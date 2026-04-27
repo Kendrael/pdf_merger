@@ -8,7 +8,17 @@ import os
 def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio, ruta_logo=None, nombre_centro="SIRIX", subtitulo_centro="Diagnóstico e Intervencionismo"):
     import sys
     if getattr(sys, 'frozen', False):
-        BASE_DIR = os.path.dirname(sys.executable)
+        mac_os = os.path.dirname(sys.executable)
+        resources = os.path.join(os.path.dirname(mac_os), 'Resources')
+        frameworks = os.path.join(os.path.dirname(mac_os), 'Frameworks')
+        
+        for directorio in [mac_os, resources, frameworks]:
+            posible = os.path.join(directorio, 'logo_sirix.jpg')
+            if os.path.exists(posible):
+                BASE_DIR = directorio
+                break
+        else:
+            BASE_DIR = mac_os
     else:
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
