@@ -24,36 +24,44 @@ def clasificar_pdf(ruta):
         if re.search(r'Nombre:', texto) and re.search(r'FECHA:', texto):
             return "informe"
 
-        # Convertir primera página a imagen para analizar color
-        from pypdfium2 import PdfDocument
+        # Usar pypdf para extraer imágenes y analizar color
+        from pypdf import PdfReader
         from PIL import Image
         import numpy as np
+        import io
 
-        doc = PdfDocument(ruta)
-        page = doc[0]
-        bitmap = page.render(scale=0.5)  # escala reducida para rapidez
-        img = bitmap.to_pil()
+        reader = PdfReader(ruta)
+        page = reader.pages[0]
 
-        # Convertir a numpy y analizar saturación de color
-        img_rgb = img.convert("RGB")
-        arr = np.array(img_rgb)
-        datos = [(int(r), int(g), int(b)) for r, g, b in arr.reshape(-1, 3)]
+        # Intentar extraer imágenes de la página
+        imagenes = []
+        if hasattr(page, 'images'):
+            imagenes = page.images
 
-        # Contar píxeles con color significativo
-        # Un píxel es "de color" si la diferencia entre sus canales RGB es > umbral
-        umbral = 20
-        pixeles_color = sum(
-            1 for r, g, b in datos
-            if max(r, g, b) - min(r, g, b) > umbral
-        )
+        if imagenes:
+            # Analizar la primera imagen
+            img_data = imagenes[0].data
+            img = Image.open(io.BytesIO(img_data)).convert("RGB")
+            arr = np.array(img)
+            datos = arr.reshape(-1, 3)
 
-        porcentaje_color = pixeles_color / len(datos)
+            # Contar píxeles con color significativo
+            umbral = 20
+            pixeles_color = sum(
+                1 for r, g, b in datos
+                if max(int(r), int(g), int(b)) - min(int(r), int(g), int(b)) > umbral
+            )
+            porcentaje_color = pixeles_color / len(datos)
 
-        # Si más del 2% de píxeles tienen color, es VR
-        if porcentaje_color > 0.02:
-            return "vr"
+            if porcentaje_color > 0.02:
+                return "vr"
+            else:
+                return "mosaico"
         else:
-            return "mosaico"
+            # Sin imágenes extraíbles, clasificar por número de páginas
+            with pdfplumber.open(ruta) as pdf:
+                num_paginas = len(pdf.pages)
+            return "mosaico" if num_paginas > 1 else "vr"
 
     except Exception as e:
         print(f"Error clasificando {ruta}: {e}")
