@@ -272,7 +272,7 @@ class AplicacionPDF(TkinterDnD.Tk):
         messagebox.showinfo(
             "Acerca de",
             "Generador de Reportes Imagenológicos\n"
-            "Versión 1.0.0\n\n"
+            "Versión 1.0.1\n\n"
             "Desarrollado por Kenny Mejia\n"
             "Bioimagenólogo & Health Data Specialist\n"
             "La Paz, Bolivia\n\n"
