@@ -374,6 +374,16 @@ class AplicacionPDF(TkinterDnD.Tk):
                     c = rl_canvas.Canvas(buf, pagesize=(ancho, alto))
                     c.setFillAlpha(0.06)
                     ruta_logo = self.centro["logo"]
+                    if not os.path.isabs(ruta_logo):
+                        import sys
+                        if getattr(sys, 'frozen', False):
+                            executable = sys.executable
+                            contenido_macos = os.path.dirname(executable)
+                            contenido = os.path.dirname(contenido_macos)
+                            for directorio in [os.path.join(contenido, 'Resources'), os.path.join(contenido, 'Frameworks'), contenido_macos]:
+                                if os.path.exists(os.path.join(directorio, ruta_logo)):
+                                    ruta_logo = os.path.join(directorio, ruta_logo)
+                                    break
                     if ruta_logo and os.path.exists(ruta_logo):
                         logo_buf = remover_fondo_blanco(ruta_logo)
                         logo = ImageReader(logo_buf)
