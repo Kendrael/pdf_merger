@@ -29,6 +29,26 @@ def agregar_marca_agua(ruta_pdf_entrada, ruta_pdf_salida, ruta_logo, opacidad=0.
     Agrega el logo como marca de agua centrada en cada página del PDF.
     opacidad: valor entre 0 y 1 (0.06 = muy sutil)
     """
+    import sys
+    if getattr(sys, 'frozen', False):
+        executable = sys.executable
+        contenido_macos = os.path.dirname(executable)
+        contenido = os.path.dirname(contenido_macos)
+        resources = os.path.join(contenido, 'Resources')
+        frameworks = os.path.join(contenido, 'Frameworks')
+        app = os.path.dirname(contenido)
+        junto_a_app = os.path.dirname(app)
+
+        BASE_DIR = contenido_macos
+        for directorio in [resources, frameworks, contenido_macos, junto_a_app]:
+            if os.path.exists(os.path.join(directorio, 'logo_sirix.jpg')):
+                BASE_DIR = directorio
+                break
+    else:
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    if ruta_logo and not os.path.isabs(ruta_logo):
+        ruta_logo = os.path.join(BASE_DIR, ruta_logo)
     reader = PdfReader(ruta_pdf_entrada)
     writer = PdfWriter()
 
