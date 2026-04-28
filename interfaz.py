@@ -294,7 +294,8 @@ class AplicacionPDF(TkinterDnD.Tk):
 
             # Generar carátula temporal
             import tempfile
-            ruta_caratula_temp = os.path.join(tempfile.gettempdir(), "_caratula_temp.pdf")
+            temp_dir = os.path.expanduser("~")
+            ruta_caratula_temp = os.path.join(temp_dir, "_caratula_temp.pdf")
             generar_caratula(
                 ruta_salida=ruta_caratula_temp,
                 nombre_paciente=nombre,
@@ -332,7 +333,7 @@ class AplicacionPDF(TkinterDnD.Tk):
                         writer.add_page(pagina)
 
             # Guardar PDF unido temporalmente
-            ruta_temp_unido = os.path.join(tempfile.gettempdir(), "_temp_unido.pdf")
+            ruta_temp_unido = os.path.join(temp_dir, "_temp_unido.pdf")
             with open(ruta_temp_unido, "wb") as f:
                 writer.write(f)
 
