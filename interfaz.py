@@ -280,6 +280,9 @@ class AplicacionPDF(TkinterDnD.Tk):
         )
 
     def _generar(self):
+        # Forzar directorio de trabajo a home del usuario
+        os.chdir(os.path.expanduser("~"))
+        
         if not self.informe:
             messagebox.showwarning("Atención", "No se detectó ningún informe.")
             return
