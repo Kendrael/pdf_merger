@@ -74,57 +74,73 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.title("Generador de Reportes")
         self.geometry("650x600")
         self.resizable(True, True)
-        self.configure(bg="#1A3C6E")
+        self.configure(bg="#3A3A3A")
 
         # Almacenamiento de archivos clasificados
         self.informe = None
         self.mosaicos = []
         self.vr = None
         self.centro = obtener_centro_activo()
-
+        self.color_primario = self.centro["color_primario"]
+        self.color_acento = self.centro["color_acento"]
         self.var_centro = tk.StringVar(value=self.centro["nombre"])
 
         self._construir_interfaz()
 
     def _construir_interfaz(self):
-        self.label_nombre_centro = tk.Label(self, text=self.centro["nombre"],
-                font=("Helvetica", 22, "bold"), bg="#1A3C6E", fg="white")
-        self.label_nombre_centro.pack(pady=(20, 0))
+        self.frame_header = tk.Frame(self, bg=self.color_primario)
+        self.frame_header.pack(fill="x")
 
-        self.label_subtitulo_centro = tk.Label(self, text=self.centro["subtitulo"],
-                font=("Helvetica", 11), bg="#1A3C6E", fg="white")
-        self.label_subtitulo_centro.pack()
+        # Línea de acento a la izquierda, cubre todo el alto del header
+        self.frame_acento = tk.Frame(self.frame_header, bg=self.color_acento, width=5)
+        self.frame_acento.pack(side="left", fill="y")
 
-        tk.Label(self, text="Generador de Reportes",
-                font=("Helvetica", 10), bg="#1A3C6E", fg="#A8C4E0").pack(pady=(0, 5))
+        # Contenedor derecho con todo el contenido del header
+        self.frame_contenido = tk.Frame(self.frame_header, bg=self.color_primario)
+        self.frame_contenido.pack(side="left", fill="both", expand=True)
 
-        # --- Botón configuración esquina superior derecha ---
-        btn_config = tk.Menubutton(self, text="⚙ Centro", bg="#1A3C6E", fg="#A8C4E0",
-                                  font=("Helvetica", 8), relief="flat",
-                                  activebackground="#1A3C6E", activeforeground="white")
-        btn_config.place(relx=0.0, rely=0.0, anchor="nw", x=10, y=10)
+        # Fila superior: botón config izquierda, botón about derecha
+        self.frame_top = tk.Frame(self.frame_contenido, bg=self.color_primario)
+        self.frame_top.pack(fill="x", padx=10, pady=(5, 0))
 
-        menu_centros = tk.Menu(btn_config, tearoff=0)
+        self.btn_config = tk.Menubutton(self.frame_top, text="⚙ Centro", bg=self.color_primario, fg="#A8C4E0",
+                    font=("Helvetica", 8), relief="flat",
+                    activebackground=self.color_primario, activeforeground="white")
+        self.btn_config.pack(side="left")
+
+        menu_centros = tk.Menu(self.btn_config, tearoff=0)
         for nombre in listar_centros():
             menu_centros.add_radiobutton(label=nombre,
                                         variable=self.var_centro,
                                         value=nombre,
                                         command=self._cambiar_centro)
-        btn_config.config(menu=menu_centros)
+        self.btn_config.config(menu=menu_centros)
 
-        # --- Botón About ---
-        btn_about = tk.Button(self, text="?", bg="#1A3C6E", fg="#A8C4E0",
-                             font=("Helvetica", 8), relief="flat",
-                             activebackground="#1A3C6E", activeforeground="white",
-                             command=self._mostrar_about)
-        btn_about.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
+        self.btn_about = tk.Button(self.frame_top, text="?", bg=self.color_primario, fg="#A8C4E0",
+                    font=("Helvetica", 8), relief="flat",
+                    activebackground=self.color_primario, activeforeground="white",
+                    command=self._mostrar_about)
+        self.btn_about.pack(side="right")
+
+        # Títulos centrados
+        self.label_nombre_centro = tk.Label(self.frame_contenido, text=self.centro["nombre"],
+                font=("Helvetica", 22, "bold"), bg=self.color_primario, fg="white")
+        self.label_nombre_centro.pack(fill="x")
+
+        self.label_subtitulo_centro = tk.Label(self.frame_contenido, text=self.centro["subtitulo"],
+                font=("Helvetica", 11), bg=self.color_primario, fg="white")
+        self.label_subtitulo_centro.pack(fill="x")
+
+        self.label_generador = tk.Label(self.frame_contenido, text="Generador de Reportes",
+                font=("Helvetica", 10), bg=self.color_primario, fg="#A8C4E0")
+        self.label_generador.pack(pady=(0, 5), fill="x")
 
         # --- Zona de drag & drop ---
         self.zona_drop = tk.Label(
             self,
-            text="Arrastra aquí los archivos PDF\n(informe, mosaicos y VR)",
+            text="Arrastre aquí los archivos PDF\n(Informe, Mosaicos y VR)",
             font=("Helvetica", 12),
-            bg="white", fg="#1A3C6E",
+            bg="white", fg=self.color_primario,
             relief="solid", bd=2,
             width=50, height=4
         )
@@ -133,47 +149,57 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.zona_drop.dnd_bind('<<Drop>>', self._on_drop)
 
         # --- Botones de selección manual ---
-        panel_botones = tk.Frame(self, bg="#1A3C6E")
+        panel_botones = tk.Frame(self, bg="#3A3A3A")
         panel_botones.pack(padx=20, pady=8, fill="x")
 
-        tk.Button(panel_botones, text="+ Informe", bg="white", fg="#1A3C6E",
-                 font=("Helvetica", 9, "bold"),
-                 command=self._seleccionar_informe).pack(side="left", padx=5)
-        tk.Button(panel_botones, text="+ Mosaico(s)", bg="white", fg="#1A3C6E",
-                 font=("Helvetica", 9, "bold"),
-                 command=self._seleccionar_mosaicos).pack(side="left", padx=5)
-        tk.Button(panel_botones, text="+ VR", bg="white", fg="#1A3C6E",
-                 font=("Helvetica", 9, "bold"),
-                 command=self._seleccionar_vr).pack(side="left", padx=5)
-        tk.Button(panel_botones, text="Limpiar", bg="#A8C4E0", fg="#1A3C6E",
-                 font=("Helvetica", 9),
-                 command=self._limpiar).pack(side="right", padx=5)
+        self.btn_informe = tk.Button(panel_botones, text="+ Informe", bg="white", fg=self.color_primario,
+            font=("Helvetica", 9, "bold"),
+            command=self._seleccionar_informe)
+        self.btn_informe.pack(side="left", padx=5)
+
+        self.btn_mosaicos = tk.Button(panel_botones, text="+ Mosaico(s)", bg="white", fg=self.color_primario,
+                font=("Helvetica", 9, "bold"),
+                command=self._seleccionar_mosaicos)
+        self.btn_mosaicos.pack(side="left", padx=5)
+
+        self.btn_vr = tk.Button(panel_botones, text="+ VR", bg="white", fg=self.color_primario,
+                font=("Helvetica", 9, "bold"),
+                command=self._seleccionar_vr)
+        self.btn_vr.pack(side="left", padx=5)
+
+        self.btn_limpiar = tk.Button(panel_botones, text="Limpiar", bg=self.color_acento, fg="white",
+                font=("Helvetica", 9),
+                command=self._limpiar)
+        self.btn_limpiar.pack(side="right", padx=5)
 
         # --- Panel de archivos detectados ---
         panel = tk.Frame(self, bg="white", padx=20, pady=15)
         panel.pack(padx=20, fill="both", expand=True)
 
-        tk.Label(panel, text="Archivos detectados:",
-                font=("Helvetica", 10, "bold"), bg="white",
-                fg="#1A3C6E").pack(anchor="w")
+        self.label_archivos = tk.Label(panel, text="Archivos detectados:",
+            font=("Helvetica", 10, "bold"), bg="white",
+            fg=self.color_primario)
+        self.label_archivos.pack(anchor="w")
 
         self.texto_archivos = tk.Text(panel, height=8, width=70,
-                                      state="disabled", bg="#F5F8FC",
-                                      font=("Helvetica", 9), relief="flat")
+                              state="disabled", bg="#F5F8FC", fg=self.color_primario,
+                              font=("Helvetica", 9), relief="flat",
+                              insertbackground=self.color_primario)
         self.texto_archivos.pack(pady=5)
 
         # --- Botón generar ---
-        tk.Button(self, text="GENERAR REPORTE",
-                 font=("Helvetica", 12, "bold"),
-                 bg="white", fg="#1A3C6E",
-                 padx=20, pady=10,
-                 command=self._generar).pack(pady=10)
+        self.btn_generar = tk.Button(self, text="GENERAR REPORTE",
+                font=("Helvetica", 12, "bold"),
+                bg=self.color_acento, fg="white",
+                padx=20, pady=10,
+                command=self._generar)
+        self.btn_generar.pack(pady=10)
 
         # --- Estado ---
         self.label_estado = tk.Label(self, text="",
-                                    font=("Helvetica", 10),
-                                    bg="#1A3C6E", fg="white",
-                                    wraplength=580)
+                            font=("Helvetica", 10),
+                            bg="#3A3A3A", fg="white",
+                            wraplength=580)
         self.label_estado.pack(pady=5)
 
     def _seleccionar_informe(self):
@@ -263,16 +289,34 @@ class AplicacionPDF(TkinterDnD.Tk):
         nombre = self.var_centro.get()
         cambiar_centro(nombre)
         self.centro = obtener_centro_activo()
-        self.label_nombre_centro.config(text=self.centro["nombre"])
-        self.label_subtitulo_centro.config(text=self.centro["subtitulo"])
+        self.color_primario = self.centro["color_primario"]
+        self.color_acento = self.centro["color_acento"]
+        self.configure(bg="#3A3A3A")
+        self.label_nombre_centro.config(text=self.centro["nombre"], bg=self.color_primario)
+        self.label_subtitulo_centro.config(text=self.centro["subtitulo"], bg=self.color_primario)
+        self.zona_drop.config(fg=self.color_primario)
         self.label_estado.config(text=f"✅ Centro activo: {self.centro['nombre']}")
+        self.btn_informe.config(fg=self.color_primario)
+        self.btn_mosaicos.config(fg=self.color_primario)
+        self.btn_vr.config(fg=self.color_primario)
+        self.btn_limpiar.config(bg=self.color_acento)
+        self.label_archivos.config(fg=self.color_primario)
+        self.texto_archivos.config(fg=self.color_primario, insertbackground=self.color_primario)
+        self.btn_generar.config(bg=self.color_acento)
+        self.btn_config.config(bg=self.color_primario, activebackground=self.color_primario)
+        self.btn_about.config(bg=self.color_primario, activebackground=self.color_primario)
+        self.frame_header.config(bg=self.color_primario)
+        self.label_generador.config(bg=self.color_primario)
+        self.frame_top.config(bg=self.color_primario)
+        self.frame_acento.config(bg=self.color_acento)
+        self.frame_contenido.config(bg=self.color_primario)
     
     def _mostrar_about(self):
         from tkinter import messagebox
         messagebox.showinfo(
             "Acerca de",
             "Generador de Reportes Imagenológicos\n"
-            "Versión 1.0.1\n\n"
+            "Versión 1.0.2\n\n"
             "Desarrollado por Kenny Mejia\n"
             "Bioimagenólogo & Health Data Specialist\n"
             "La Paz, Bolivia\n\n"

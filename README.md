@@ -2,7 +2,7 @@
 
 Desktop tool to merge and present medical imaging study reports (CT, ultrasound, X-ray, and others) into a single PDF file ready to send.
 
-Developed for **SIRIX - Diagnóstico e Intervencionismo** and associated centers (CERADI, CERADI-CIES), La Paz, Bolivia.
+Developed for **SIRIX - Diagnóstico e Intervencionismo** and associated centers (CERADI, CERADI-CIES, SIRIX-KOLPING), La Paz, Bolivia.
 
 ---
 
@@ -15,7 +15,8 @@ Developed for **SIRIX - Diagnóstico e Intervencionismo** and associated centers
 - Auto-generated output filename (LastName_FirstName_Month_Year.pdf)
 - Institutional watermark on the report page
 - Support for multiple mosaic files
-- Active center selector (SIRIX / CERADI / CERADI-CIES)
+- Active center selector (SIRIX / CERADI / CERADI-CIES / SIRIX-KOLPING)
+- Per-center color theming
 
 ---
 
@@ -23,11 +24,13 @@ Developed for **SIRIX - Diagnóstico e Intervencionismo** and associated centers
 
 - Python 3.13+
 - Dependencies:
+
 pip install pypdf pdfplumber reportlab pillow tkinterdnd2 pypdfium2 numpy
 
 ---
 
 ## Usage
+
 python interfaz.py
 
 1. Drag PDF files onto the window, or use the selection buttons
@@ -38,6 +41,7 @@ python interfaz.py
 ---
 
 ## Project Structure
+
 pdf_merger/
 ├── interfaz.py          # Main graphical interface
 ├── extractor.py         # Data extraction from report
@@ -55,23 +59,22 @@ pdf_merger/
 
 - Developed with AI assistance (Claude, Anthropic)
 - Compatible with reports generated in Pages (macOS) exported to PDF
-- Pending: packaging as native macOS application
+- Version 1.0.2
 
 ---
 
-## Autor / Author
+## Author
 
 Kenny Mejia — Bioimagenólogo & Health Data Specialist, La Paz, Bolivia
 
 ---
-
 ---
 
 # PDF Merger - Generador de Reportes Imagenológicos
 
 Herramienta de escritorio para unir y presentar reportes de estudios imagenológicos (tomografía, ecografía, rayos X y otros) en un solo archivo PDF listo para enviar.
 
-Desarrollada para **SIRIX - Diagnóstico e Intervencionismo** y centros asociados (CERADI, CERADI-CIES), La Paz, Bolivia.
+Desarrollada para **SIRIX - Diagnóstico e Intervencionismo** y centros asociados (CERADI, CERADI-CIES, SIRIX-KOLPING), La Paz, Bolivia.
 
 ---
 
@@ -84,7 +87,8 @@ Desarrollada para **SIRIX - Diagnóstico e Intervencionismo** y centros asociado
 - Nombre de archivo de salida autogenerado (Apellido_Nombre_Mes_Año.pdf)
 - Marca de agua institucional en el informe
 - Soporte para múltiples mosaicos
-- Selector de centro activo (SIRIX / CERADI / CERADI-CIES)
+- Selector de centro activo (SIRIX / CERADI / CERADI-CIES / SIRIX-KOLPING)
+- Temas de color por centro
 
 ---
 
@@ -92,11 +96,13 @@ Desarrollada para **SIRIX - Diagnóstico e Intervencionismo** y centros asociado
 
 - Python 3.13+
 - Dependencias:
+
 pip install pypdf pdfplumber reportlab pillow tkinterdnd2 pypdfium2 numpy
 
 ---
 
 ## Uso
+
 python interfaz.py
 
 1. Arrastra los archivos PDF del estudio a la ventana, o usa los botones de selección
@@ -110,4 +116,10 @@ python interfaz.py
 
 - Desarrollado con asistencia de IA (Claude, Anthropic)
 - Compatible con informes generados en Pages (macOS) exportados a PDF
-- Pendiente: empaquetado como aplicación nativa para macOS
+- Versión 1.0.2
+
+---
+
+## Autor
+
+Kenny Mejia — Bioimagenólogo & Health Data Specialist, La Paz, Bolivia

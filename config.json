@@ -1,20 +1,33 @@
 {
-    "centro_activo": "CERADI",
+    "centro_activo": "SIRIX-KOLPING",
     "centros": {
         "SIRIX": {
             "nombre": "SIRIX",
             "subtitulo": "Diagnóstico e Intervencionismo",
-            "logo": "logo_sirix.jpg"
+            "logo": "logo_sirix.jpg",
+            "color_primario": "#1A3C6E",
+            "color_acento": "#505050"
         },
         "CERADI": {
             "nombre": "CERADI",
             "subtitulo": "Complejo Medico",
-            "logo": "logo_ceradi.jpg"
+            "logo": "logo_ceradi.jpg",
+            "color_primario": "#14143C",
+            "color_acento": "#B40078"
         },
         "CERADI-CIES": {
             "nombre": "CERADI - CIES",
             "subtitulo": "Clinica CIES San Pedro",
-            "logo": "logo_ceradi.jpg"
+            "logo": "logo_ceradi.jpg",
+            "color_primario": "#3C7850",
+            "color_acento": "#C86428"
+        },
+        "SIRIX-KOLPING": {
+            "nombre": "SIRIX - KOLPING",
+            "subtitulo": "Clinica KOLPING Villa Dolores",
+            "logo": "logo_sirix.jpg",
+            "color_primario": "#000000",
+            "color_acento": "#F08C00"
         }
     }
 }
