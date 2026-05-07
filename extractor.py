@@ -32,7 +32,7 @@ def extraer_datos(ruta_pdf):
         fecha_formateada = "Fecha_desconocida"
 
     # Buscar tipo de estudio
-    estudio_match = re.search(r'Estudio:\s*(.+?)(?:\n\n|\nDatos|\nHallazgos)', texto, re.DOTALL)
+    estudio_match = re.search(r'(?i)estudio:\s*(.+?)(?:\n\n|\nDatos|\nHallazgos)', texto, re.DOTALL)
     if estudio_match:
         estudio = " ".join(estudio_match.group(1).strip().split())
     else:
