@@ -79,7 +79,7 @@ class AplicacionPDF(TkinterDnD.Tk):
         # Almacenamiento de archivos clasificados
         self.informe = None
         self.mosaicos = []
-        self.vr = None
+        self.vrs = []
         self.centro = obtener_centro_activo()
         self.color_primario = self.centro["color_primario"]
         self.color_acento = self.centro["color_acento"]
@@ -218,15 +218,15 @@ class AplicacionPDF(TkinterDnD.Tk):
 
     def _seleccionar_vr(self):
         from tkinter import filedialog
-        ruta = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
-        if ruta:
-            self.vr = ruta
+        rutas = filedialog.askopenfilenames(filetypes=[("PDF", "*.pdf")])
+        if rutas:
+            self.vrs.extend(rutas)
             self._actualizar_panel()
 
     def _limpiar(self):
         self.informe = None
         self.mosaicos = []
-        self.vr = None
+        self.vrs = []
         self._actualizar_panel()
         self.label_estado.config(text="")
         
@@ -237,7 +237,7 @@ class AplicacionPDF(TkinterDnD.Tk):
 
         self.informe = None
         self.mosaicos = []
-        self.vr = None
+        self.vrs = []
 
         self.label_estado.config(text="Clasificando archivos...")
         self.update()
@@ -252,7 +252,7 @@ class AplicacionPDF(TkinterDnD.Tk):
             elif tipo == "mosaico":
                 self.mosaicos.append(ruta)
             elif tipo == "vr":
-                self.vr = ruta
+                self.vrs.append(ruta)
 
         self._actualizar_panel()
         self.label_estado.config(text="")
@@ -276,9 +276,10 @@ class AplicacionPDF(TkinterDnD.Tk):
         else:
             self.texto_archivos.insert(tk.END, "Mosaico: no detectado\n\n")
 
-        if self.vr:
-            self.texto_archivos.insert(tk.END,
-                f"VR:       {os.path.basename(self.vr)}\n")
+        if self.vrs:
+            for i, v in enumerate(self.vrs, 1):
+                self.texto_archivos.insert(tk.END,
+                    f"VR {i}:      {os.path.basename(v)}\n")
         else:
             self.texto_archivos.insert(tk.END, "VR:      no detectado\n")
 
@@ -316,7 +317,7 @@ class AplicacionPDF(TkinterDnD.Tk):
         messagebox.showinfo(
             "Acerca de",
             "Generador de Reportes Imagenológicos\n"
-            "Versión 1.0.2\n\n"
+            "Versión 1.0.3\n\n"
             "Desarrollado por Kenny Mejia\n"
             "Bioimagenólogo & Health Data Specialist\n"
             "La Paz, Bolivia\n\n"
@@ -373,7 +374,7 @@ class AplicacionPDF(TkinterDnD.Tk):
             from pypdf import PdfWriter, PdfReader
             writer = PdfWriter()
 
-            for ruta in [ruta_caratula_temp, self.informe] + self.mosaicos + [self.vr]:
+            for ruta in [ruta_caratula_temp, self.informe] + self.mosaicos + self.vrs:
                 if ruta and os.path.exists(ruta):
                     reader = PdfReader(ruta)
                     for pagina in reader.pages:

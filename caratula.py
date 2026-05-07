@@ -1,15 +1,18 @@
 from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
 from reportlab.lib.units import cm
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+from reportlab.lib import colors
 import os
+import sys
 
-def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio, ruta_logo=None, nombre_centro="SIRIX", subtitulo_centro="Diagnóstico e Intervencionismo"):
+def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio,
+                     ruta_logo=None, nombre_centro="SIRIX",
+                     subtitulo_centro="Diagnóstico e Intervencionismo"):
     """
-    Genera una página de carátula en PDF con los datos del estudio.
+    Genera la carátula usando la imagen de fondo del centro correspondiente.
     """
-    import sys
+    # Resolver BASE_DIR igual que antes
     if getattr(sys, 'frozen', False):
         executable = sys.executable
         contenido_macos = os.path.dirname(executable)
@@ -21,90 +24,93 @@ def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio, ruta_log
 
         BASE_DIR = contenido_macos
         for directorio in [resources, frameworks, contenido_macos, junto_a_app]:
-            if os.path.exists(os.path.join(directorio, 'logo_sirix.jpg')):
+            if os.path.exists(os.path.join(directorio, 'config.json')):
                 BASE_DIR = directorio
                 break
     else:
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    if ruta_logo and not os.path.isabs(ruta_logo):
-        ruta_logo = os.path.join(BASE_DIR, ruta_logo)
+    # Mapear centro a imagen de carátula
+    imagenes_caratula = {
+        "SIRIX":         "Caratula_Sirix.jpeg",
+        "CERADI":        "Caratula_Ceradi.jpeg",
+        "CERADI - CIES": "Caratula_Cies.jpeg",
+        "SIRIX - KOLPING": "Caratula_Kolping.jpeg",
+    }
+    nombre_imagen = imagenes_caratula.get(nombre_centro, "Caratula_Sirix.jpeg")
+    ruta_imagen = os.path.join(BASE_DIR, nombre_imagen)
 
-    c = canvas.Canvas(ruta_salida, pagesize=letter)
-    ancho, alto = letter
+    # Tamaño de página: ancho carta, alto proporcional a la imagen
+    ancho_pt = 612.0
+    alto_pt = 311.7
 
-    # --- Franja superior azul ---
-    c.setFillColor(colors.HexColor("#1A3C6E"))
-    c.rect(0, alto - 4*cm, ancho, 4*cm, fill=True, stroke=False)
+    c = canvas.Canvas(ruta_salida, pagesize=(ancho_pt, alto_pt))
 
-    # --- Logo (si existe) ---
-    if ruta_logo and os.path.exists(ruta_logo):
-        logo = ImageReader(ruta_logo)
-        c.drawImage(logo, 1.5*cm, alto - 3.5*cm, width=5*cm, height=3*cm,
-                   preserveAspectRatio=True, mask='auto')
+    # --- Fondo: imagen del centro ---
+    if os.path.exists(ruta_imagen):
+        fondo = ImageReader(ruta_imagen)
+        c.drawImage(fondo, 0, 0, width=ancho_pt, height=alto_pt,
+                   preserveAspectRatio=False)
 
-    # --- Nombre del centro en la franja ---
-    c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(ancho/2, alto - 2*cm, nombre_centro)
-    c.setFont("Helvetica", 11)
-    c.drawCentredString(ancho/2, alto - 2.8*cm, subtitulo_centro)
+    # --- Coordenadas de texto (en puntos PDF) ---
+    x_texto = 21.0
+    ancho_texto = 302.0 - x_texto   # ancho disponible ~281 pt
 
-    # --- Título del documento ---
-    c.setFillColor(colors.HexColor("#1A3C6E"))
-    c.setFont("Helvetica-Bold", 20)
-    c.drawCentredString(ancho/2, alto - 7*cm, "REPORTE DE IMAGENOLOGIA")
+    y_paciente = 210.3
+    y_estudio  = 175.6
+    y_fecha    = 141.0
 
-    # --- Línea divisoria ---
-    c.setStrokeColor(colors.HexColor("#1A3C6E"))
-    c.setLineWidth(2)
-    c.line(2*cm, alto - 7.8*cm, ancho - 2*cm, alto - 7.8*cm)
+    # Color del texto: azul oscuro de SIRIX, legible sobre fondo blanco
+    c.setFillColor(colors.HexColor("#1A1A1A"))
 
-    # --- Datos del paciente ---
-    c.setFillColor(colors.HexColor("#1A3C6E"))
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(2*cm, alto - 10*cm, "DATOS DEL ESTUDIO")
+    # --- PACIENTE ---
+    c.setFont("Helvetica", 8)
+    c.drawString(x_texto, y_paciente + 10, "Paciente:")
 
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(2*cm, alto - 11.5*cm, "Paciente:")
-    c.setFont("Helvetica", 11)
-    c.drawString(6*cm, alto - 11.5*cm, nombre_paciente)
+    nombre_font = 17
+    c.setFont("Helvetica-Bold", nombre_font)
+    # Si el nombre es muy largo, reducir fuente
+    while c.stringWidth(nombre_paciente, "Helvetica-Bold", nombre_font) > ancho_texto and nombre_font > 8:
+        nombre_font -= 1
+        c.setFont("Helvetica-Bold", nombre_font)
+    c.drawString(x_texto, y_paciente - 4, nombre_paciente)
 
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(2*cm, alto - 12.5*cm, "Fecha:")
-    c.setFont("Helvetica", 11)
-    c.drawString(6*cm, alto - 12.5*cm, fecha)
+    # --- ESTUDIO ---
+    c.setFont("Helvetica", 8)
+    c.drawString(x_texto, y_estudio + 10, "Estudio:")
 
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(2*cm, alto - 13.5*cm, "Estudio:")
+    estudio_font = 12
     from reportlab.lib.utils import simpleSplit
-    c.setFont("Helvetica", 11)
-    lineas = simpleSplit(tipo_estudio, "Helvetica", 11, ancho - 8*cm)
-    y_estudio = alto - 13.5*cm
-    for linea in lineas:
-        c.drawString(6*cm, y_estudio, linea)
-        y_estudio -= 0.5*cm
+    lineas = simpleSplit(tipo_estudio, "Helvetica-Bold", estudio_font, ancho_texto)
+    while len(lineas) > 3 and estudio_font > 7:
+        estudio_font -= 1
+        lineas = simpleSplit(tipo_estudio, "Helvetica-Bold", estudio_font, ancho_texto)
+    c.setFont("Helvetica-Bold", estudio_font)
+    y_linea = y_estudio - 8
+    for linea in lineas[:3]:
+        c.drawString(x_texto, y_linea, linea)
+        y_linea -= estudio_font + 3
 
-    # --- Línea divisoria inferior - posición dinámica ---
-    c.setStrokeColor(colors.HexColor("#1A3C6E"))
-    c.setLineWidth(1)
-    c.line(2*cm, y_estudio - 0.3*cm, ancho - 2*cm, y_estudio - 0.3*cm)
+    # --- FECHA --- posición dinámica según líneas del estudio
+    y_fecha_dinamica = y_linea - 12
+    c.setFont("Helvetica", 8)
+    c.drawString(x_texto, y_fecha_dinamica + 10, "Fecha:")
 
-    # --- Pie de página ---
-    c.setFillColor(colors.HexColor("#1A3C6E"))
-    c.setFont("Helvetica", 9)
-    c.drawCentredString(ancho/2, 2*cm, "El presente estudio se almacenará en nuestro sistema PACS por 4 años")
+    partes = fecha.split(" ")  # ["23", "Abril", "2026"]
+    fecha_display = f"{partes[0]} de {partes[1]} de {partes[2]}"
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(x_texto, y_fecha_dinamica - 4, fecha_display)
 
     c.save()
+
 
 # Bloque de prueba
 if __name__ == "__main__":
     generar_caratula(
         ruta_salida="caratula_prueba.pdf",
         nombre_paciente="UGARTE VIDAURRE OSCAR",
-        fecha="Abril 2026",
+        fecha="04_Mayo_2026",
         tipo_estudio="CT - ABDOMEN Y PELVIS SIMPLE CON PROTOCOLO DE UROLITIASIS",
-        ruta_logo="logo_sirix.jpg"
+        nombre_centro="SIRIX"
     )
     print("Carátula generada: caratula_prueba.pdf")

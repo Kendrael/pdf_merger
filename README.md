@@ -59,7 +59,7 @@ pdf_merger/
 
 - Developed with AI assistance (Claude, Anthropic)
 - Compatible with reports generated in Pages (macOS) exported to PDF
-- Version 1.0.2
+- Version 1.0.3
 
 ---
 
@@ -116,7 +116,7 @@ python interfaz.py
 
 - Desarrollado con asistencia de IA (Claude, Anthropic)
 - Compatible con informes generados en Pages (macOS) exportados a PDF
-- Versión 1.0.2
+- Versión 1.0.3
 
 ---
 

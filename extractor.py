@@ -27,7 +27,7 @@ def extraer_datos(ruta_pdf):
             5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
             9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
         }
-        fecha_formateada = f"{meses[fecha_obj.month]}_{fecha_obj.year}"
+        fecha_formateada = f"{fecha_obj.day:02d}_{meses[fecha_obj.month]}_{fecha_obj.year}"
     else:
         fecha_formateada = "Fecha_desconocida"
 
@@ -36,7 +36,7 @@ def extraer_datos(ruta_pdf):
     if estudio_match:
         estudio = " ".join(estudio_match.group(1).strip().split())
     else:
-        estudio = "Estudio Tomográfico"
+        estudio = "Estudio Imagenologico"
 
     return {
         "nombre": nombre,
