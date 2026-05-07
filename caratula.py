@@ -7,8 +7,7 @@ import os
 import sys
 
 def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio,
-                     ruta_logo=None, nombre_centro="SIRIX",
-                     subtitulo_centro="Diagnóstico e Intervencionismo"):
+                     nombre_centro="SIRIX"):
     """
     Genera la carátula usando la imagen de fondo del centro correspondiente.
     """

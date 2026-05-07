@@ -349,9 +349,7 @@ class AplicacionPDF(TkinterDnD.Tk):
                 nombre_paciente=nombre,
                 fecha=fecha.replace("_", " "),
                 tipo_estudio=datos["estudio"],
-                ruta_logo=self.centro["logo"],
-                nombre_centro=self.centro["nombre"],
-                subtitulo_centro=self.centro["subtitulo"]
+                nombre_centro=self.centro["nombre"]
             )
 
             # Nombre y ubicación del archivo final
@@ -385,23 +383,8 @@ class AplicacionPDF(TkinterDnD.Tk):
             with open(ruta_temp_unido, "wb") as f:
                 writer.write(f)
 
-            # Aplicar marca de agua a todas las páginas excepto la carátula
-            from marca_agua import agregar_marca_agua
-            from pypdf import PdfWriter as PdfWriterFinal, PdfReader as PdfReaderFinal
-            from marca_agua import remover_fondo_blanco
-            from reportlab.pdfgen import canvas as rl_canvas
-            from reportlab.lib.utils import ImageReader
-            import io
-
-            reader_temp = PdfReaderFinal(ruta_temp_unido)
-            writer_final = PdfWriterFinal()
-
-           # Guardar PDF unido temporalmente
-            ruta_temp_unido = "_temp_unido.pdf"
-            with open(ruta_temp_unido, "wb") as f:
-                writer.write(f)
-
             # Aplicar marca de agua solo al informe (página 2, índice 1)
+            from pypdf import PdfWriter as PdfWriterFinal, PdfReader as PdfReaderFinal
             from marca_agua import remover_fondo_blanco
             from reportlab.pdfgen import canvas as rl_canvas
             from reportlab.lib.utils import ImageReader
@@ -412,7 +395,6 @@ class AplicacionPDF(TkinterDnD.Tk):
 
             for i, pagina in enumerate(reader_temp.pages):
                 if i == 1:
-                    # Solo el informe recibe marca de agua
                     ancho = float(pagina.mediabox.width)
                     alto = float(pagina.mediabox.height)
                     buf = io.BytesIO()
@@ -420,6 +402,7 @@ class AplicacionPDF(TkinterDnD.Tk):
                     c.setFillAlpha(0.06)
                     ruta_logo = self.centro["logo"]
                     if not os.path.isabs(ruta_logo):
+                        ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), ruta_logo)
                         import sys
                         if getattr(sys, 'frozen', False):
                             executable = sys.executable
