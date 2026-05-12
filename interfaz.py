@@ -168,6 +168,8 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.btn_vr.pack(side="left", padx=5)
 
         self.btn_limpiar = tk.Button(panel_botones, text="Limpiar", bg=self.color_acento, fg="white",
+                activebackground=self.color_acento, activeforeground="white",
+                highlightbackground=self.color_acento,
                 font=("Helvetica", 9),
                 command=self._limpiar)
         self.btn_limpiar.pack(side="right", padx=5)
@@ -191,6 +193,8 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.btn_generar = tk.Button(self, text="GENERAR REPORTE",
                 font=("Helvetica", 12, "bold"),
                 bg=self.color_acento, fg="white",
+                activebackground=self.color_acento, activeforeground="white",
+                highlightbackground=self.color_acento,
                 padx=20, pady=10,
                 command=self._generar)
         self.btn_generar.pack(pady=10)
@@ -300,10 +304,10 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.btn_informe.config(fg=self.color_primario)
         self.btn_mosaicos.config(fg=self.color_primario)
         self.btn_vr.config(fg=self.color_primario)
-        self.btn_limpiar.config(bg=self.color_acento)
+        self.btn_limpiar.config(bg=self.color_acento, highlightbackground=self.color_acento)
         self.label_archivos.config(fg=self.color_primario)
         self.texto_archivos.config(fg=self.color_primario, insertbackground=self.color_primario)
-        self.btn_generar.config(bg=self.color_acento)
+        self.btn_generar.config(bg=self.color_acento, highlightbackground=self.color_acento)
         self.btn_config.config(bg=self.color_primario, activebackground=self.color_primario)
         self.btn_about.config(bg=self.color_primario, activebackground=self.color_primario)
         self.frame_header.config(bg=self.color_primario)

@@ -10,13 +10,14 @@ Developed for **SIRIX - Diagnóstico e Intervencionismo** and associated centers
 
 - Drag & drop or manual file selection
 - Automatic file classification (report, mosaics, VR) by content and color analysis
-- Automatic cover page generation with institutional logo and study data
+- Automatic cover page generation using per-center image template with patient data
 - Automatic extraction of patient name, date, and study type from the report
-- Auto-generated output filename (LastName_FirstName_Month_Year.pdf)
+- Auto-generated output filename (LastName_FirstName_DD_Month_Year.pdf)
 - Institutional watermark on the report page
 - Support for multiple mosaic files
 - Active center selector (SIRIX / CERADI / CERADI-CIES / SIRIX-KOLPING)
 - Per-center color theming
+- Support for multiple VR files
 
 ---
 
@@ -43,15 +44,19 @@ python interfaz.py
 ## Project Structure
 
 pdf_merger/
-├── interfaz.py          # Main graphical interface
-├── extractor.py         # Data extraction from report
-├── caratula.py          # Cover page PDF generation
-├── merger.py            # PDF file merging
-├── marca_agua.py        # Watermark application
-├── config_manager.py    # Center configuration management
-├── config.json          # Center and logo configuration
-├── logo_sirix.jpg       # SIRIX logo
-└── logo_ceradi.jpg      # CERADI logo
+├── interfaz.py           # Main graphical interface
+├── extractor.py          # Data extraction from report
+├── caratula.py           # Cover page PDF generation
+├── merger.py             # PDF file merging
+├── marca_agua.py         # Watermark application
+├── config_manager.py     # Center configuration management
+├── config.json           # Center and logo configuration
+├── logo_sirix.jpg        # SIRIX logo
+├── logo_ceradi.jpg       # CERADI logo
+├── Caratula_Ceradi.jpeg  # CERADI coverpage
+├── Caratula_Cies.jpeg    # CIES coverpage
+├── Caratula_Kolping.jpeg # Kolping coverpage
+└── Caratula_Sirix.jpeg   # SIRIX Coverpage
 
 ---
 
@@ -59,7 +64,8 @@ pdf_merger/
 
 - Developed with AI assistance (Claude, Anthropic)
 - Compatible with reports generated in Pages (macOS) exported to PDF
-- Version 1.0.3
+- macOS installation: place the .app file and the _internal folder in the same directory before running
+- Version 1.0.4
 
 ---
 
@@ -82,13 +88,14 @@ Desarrollada para **SIRIX - Diagnóstico e Intervencionismo** y centros asociado
 
 - Drag & drop o selección manual de archivos PDF
 - Clasificación automática de archivos (informe, mosaicos, VR) por contenido y análisis de color
-- Generación automática de carátula con logo y datos del estudio
+- Generación automática de carátula usando imagen institucional por centro con datos del paciente
 - Extracción automática de nombre del paciente, fecha y tipo de estudio desde el informe
-- Nombre de archivo de salida autogenerado (Apellido_Nombre_Mes_Año.pdf)
+- Nombre de archivo de salida autogenerado (Apellido_Nombre_DD_Mes_Año.pdf)
 - Marca de agua institucional en el informe
 - Soporte para múltiples mosaicos
 - Selector de centro activo (SIRIX / CERADI / CERADI-CIES / SIRIX-KOLPING)
 - Temas de color por centro
+- Soporte para múltiples archivos VR
 
 ---
 
@@ -116,7 +123,8 @@ python interfaz.py
 
 - Desarrollado con asistencia de IA (Claude, Anthropic)
 - Compatible con informes generados en Pages (macOS) exportados a PDF
-- Versión 1.0.3
+- Instalación en macOS: colocar el archivo .app y la carpeta _internal en el mismo directorio antes de ejecutar
+- Versión 1.0.4
 
 ---
 
