@@ -63,10 +63,10 @@ def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio,
     c.setFillColor(colors.HexColor("#1A1A1A"))
 
     # --- PACIENTE ---
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica", 7)
     c.drawString(x_texto, y_paciente + 10, "Paciente:")
 
-    nombre_font = 17
+    nombre_font = 12
     c.setFont("Helvetica-Bold", nombre_font)
     # Si el nombre es muy largo, reducir fuente
     while c.stringWidth(nombre_paciente, "Helvetica-Bold", nombre_font) > ancho_texto and nombre_font > 8:
@@ -75,10 +75,10 @@ def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio,
     c.drawString(x_texto, y_paciente - 4, nombre_paciente)
 
     # --- ESTUDIO ---
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica", 7)
     c.drawString(x_texto, y_estudio + 10, "Estudio:")
 
-    estudio_font = 12
+    estudio_font = 10
     from reportlab.lib.utils import simpleSplit
     lineas = simpleSplit(tipo_estudio, "Helvetica-Bold", estudio_font, ancho_texto)
     while len(lineas) > 3 and estudio_font > 7:
@@ -92,12 +92,12 @@ def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio,
 
     # --- FECHA --- posición dinámica según líneas del estudio
     y_fecha_dinamica = y_linea - 12
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica", 7)
     c.drawString(x_texto, y_fecha_dinamica + 10, "Fecha:")
 
     partes = fecha.split(" ")  # ["23", "Abril", "2026"]
     fecha_display = f"{partes[0]} de {partes[1]} de {partes[2]}"
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont("Helvetica-Bold", 10)
     c.drawString(x_texto, y_fecha_dinamica - 4, fecha_display)
 
     c.save()
