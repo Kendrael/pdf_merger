@@ -116,10 +116,9 @@ class AplicacionPDF(TkinterDnD.Tk):
                                         command=self._cambiar_centro)
         self.btn_config.config(menu=menu_centros)
 
-        self.btn_about = tk.Button(self.frame_top, text="?", bg=self.color_primario, fg="#A8C4E0",
-                    font=("Helvetica", 8), relief="flat",
-                    activebackground=self.color_primario, activeforeground="white",
-                    command=self._mostrar_about)
+        self.btn_about = tk.Label(self.frame_top, text="?", bg=self.color_primario, fg="#A8C4E0",
+                    font=("Helvetica", 8), cursor="hand2")
+        self.btn_about.bind("<Button-1>", lambda e: self._mostrar_about())
         self.btn_about.pack(side="right")
 
         # Títulos centrados
@@ -167,11 +166,9 @@ class AplicacionPDF(TkinterDnD.Tk):
                 command=self._seleccionar_vr)
         self.btn_vr.pack(side="left", padx=5)
 
-        self.btn_limpiar = tk.Button(panel_botones, text="Limpiar", bg=self.color_acento, fg="white",
-                activebackground=self.color_acento, activeforeground="white",
-                highlightbackground=self.color_acento,
-                font=("Helvetica", 9),
-                command=self._limpiar)
+        self.btn_limpiar = tk.Label(panel_botones, text="Limpiar", bg=self.color_acento, fg="white",
+                font=("Helvetica", 9), padx=8, pady=4, cursor="hand2")
+        self.btn_limpiar.bind("<Button-1>", lambda e: self._limpiar())
         self.btn_limpiar.pack(side="right", padx=5)
 
         # --- Panel de archivos detectados ---
@@ -190,13 +187,11 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.texto_archivos.pack(pady=5)
 
         # --- Botón generar ---
-        self.btn_generar = tk.Button(self, text="GENERAR REPORTE",
+        self.btn_generar = tk.Label(self, text="GENERAR REPORTE",
                 font=("Helvetica", 12, "bold"),
                 bg=self.color_acento, fg="white",
-                activebackground=self.color_acento, activeforeground="white",
-                highlightbackground=self.color_acento,
-                padx=20, pady=10,
-                command=self._generar)
+                padx=20, pady=10, cursor="hand2")
+        self.btn_generar.bind("<Button-1>", lambda e: self._generar())
         self.btn_generar.pack(pady=10)
 
         # --- Estado ---
