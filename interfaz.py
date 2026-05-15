@@ -86,6 +86,7 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.var_centro = tk.StringVar(value=self.centro["nombre"])
 
         self._construir_interfaz()
+        self.bind("<Button-1>", lambda e: self.focus_force())
 
     def _construir_interfaz(self):
         self.frame_header = tk.Frame(self, bg=self.color_primario)
@@ -316,7 +317,7 @@ class AplicacionPDF(TkinterDnD.Tk):
         messagebox.showinfo(
             "Acerca de",
             "Generador de Reportes Imagenológicos\n"
-            "Versión 1.0.3\n\n"
+            "Versión 1.0.5\n\n"
             "Desarrollado por Kenny Mejia\n"
             "Bioimagenólogo & Health Data Specialist\n"
             "La Paz, Bolivia\n\n"

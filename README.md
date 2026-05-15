@@ -65,7 +65,7 @@ pdf_merger/
 - Developed with AI assistance (Claude, Anthropic)
 - Compatible with reports generated in Pages (macOS) exported to PDF
 - macOS installation: place the .app file and the _internal folder in the same directory before running
-- Version 1.0.4
+- Version 1.0.5
 
 ---
 
@@ -124,7 +124,7 @@ python interfaz.py
 - Desarrollado con asistencia de IA (Claude, Anthropic)
 - Compatible con informes generados en Pages (macOS) exportados a PDF
 - Instalación en macOS: colocar el archivo .app y la carpeta _internal en el mismo directorio antes de ejecutar
-- Versión 1.0.4
+- Versión 1.0.5
 
 ---
 
