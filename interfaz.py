@@ -317,7 +317,7 @@ class AplicacionPDF(TkinterDnD.Tk):
         messagebox.showinfo(
             "Acerca de",
             "Generador de Reportes Imagenológicos\n"
-            "Versión 1.0.5\n\n"
+            "Versión 1.0.6\n\n"
             "Desarrollado por Kenny Mejia\n"
             "Bioimagenólogo & Health Data Specialist\n"
             "La Paz, Bolivia\n\n"
@@ -402,16 +402,16 @@ class AplicacionPDF(TkinterDnD.Tk):
                     c.setFillAlpha(0.06)
                     ruta_logo = self.centro["logo"]
                     if not os.path.isabs(ruta_logo):
-                        ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), ruta_logo)
                         import sys
                         if getattr(sys, 'frozen', False):
-                            executable = sys.executable
-                            contenido_macos = os.path.dirname(executable)
-                            contenido = os.path.dirname(contenido_macos)
-                            for directorio in [os.path.join(contenido, 'Resources'), os.path.join(contenido, 'Frameworks'), contenido_macos]:
-                                if os.path.exists(os.path.join(directorio, ruta_logo)):
-                                    ruta_logo = os.path.join(directorio, ruta_logo)
+                            base = os.path.dirname(sys.executable)
+                            for directorio in [base, os.path.join(base, '..', 'Resources'), os.path.join(base, '..', 'Frameworks')]:
+                                candidato = os.path.join(directorio, ruta_logo)
+                                if os.path.exists(candidato):
+                                    ruta_logo = candidato
                                     break
+                        else:
+                            ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), ruta_logo)
                     if ruta_logo and os.path.exists(ruta_logo):
                         logo_buf = remover_fondo_blanco(ruta_logo)
                         logo = ImageReader(logo_buf)

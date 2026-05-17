@@ -10,9 +10,17 @@ def extraer_datos(ruta_pdf):
     with pdfplumber.open(ruta_pdf) as pdf:
         texto = pdf.pages[0].extract_text()
 
-    # Buscar nombre del paciente
-    nombre_match = re.search(r'Nombre:\s*(.+?)(?:\s{2,}|\t|Médico|$)', texto)
-    nombre = nombre_match.group(1).strip() if nombre_match else "DESCONOCIDO"
+    # Buscar nombre completo al final del documento (más confiable)
+    nombre_completo_match = re.search(r'^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]+?)\s*-\s*(?:CT|ECO|RX)', texto, re.MULTILINE)
+    if nombre_completo_match:
+        nombre = nombre_completo_match.group(1).strip()
+    else:
+        # Fallback: buscar después de "Nombre:"
+        nombre_match = re.search(r'Nombre:\s*(.+?)(?=\s{2,}|\t|[Mm]é?dico)', texto, re.DOTALL)
+        if nombre_match:
+            nombre = ' '.join(nombre_match.group(1).strip().split())
+        else:
+            nombre = "DESCONOCIDO"
 
     # Buscar fecha del estudio (acepta / o . como separador)
     fecha_match = re.search(r'FECHA:\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})', texto)
