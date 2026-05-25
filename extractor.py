@@ -11,7 +11,7 @@ def extraer_datos(ruta_pdf):
         texto = pdf.pages[0].extract_text()
 
     # Buscar nombre completo al final del documento (más confiable)
-    nombre_completo_match = re.search(r'^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]+?)\s*-\s*(?:CT|ECO|RX)', texto, re.MULTILINE)
+    nombre_completo_match = re.search(r'^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]+?)\s*-\s*(?:CT|ECO|RX|\d{1,2}/)', texto, re.MULTILINE)
     if nombre_completo_match:
         nombre = nombre_completo_match.group(1).strip()
     else:
