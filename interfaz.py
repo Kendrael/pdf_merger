@@ -21,7 +21,7 @@ def clasificar_pdf(ruta):
             texto = pdf.pages[0].extract_text() or ""
 
         # Primero verificar si es informe
-        if re.search(r'Nombre:', texto) and re.search(r'FECHA:', texto):
+        if re.search(r'(?i)nombre:', texto) and re.search(r'(?i)fecha:', texto):
             return "informe"
 
         # Usar pypdf para extraer imágenes y analizar color

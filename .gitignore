@@ -7,3 +7,6 @@ _temp_unido.pdf
 .DS_Store
 __pycache__/
 *.pyc
+
+# Entorno virtual
+venv/
