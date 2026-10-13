@@ -1,67 +1,52 @@
-import tkinter as tk
-from tkinter import messagebox
-from tkinterdnd2 import TkinterDnD, DND_FILES
+import io
 import os
-import re
+import sys
+import tkinter as tk
+from tkinter import messagebox, filedialog
+
+import numpy as np
 import pdfplumber
-from extractor import extraer_datos, es_informe
+from PIL import Image
+from pypdf import PdfReader, PdfWriter
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas as rl_canvas
+from tkinterdnd2 import TkinterDnD, DND_FILES
+
 from caratula import generar_caratula
-from merger import unir_pdfs
 from config_manager import obtener_centro_activo, cambiar_centro, listar_centros
+from extractor import extraer_datos, es_informe
+from marca_agua import remover_fondo_blanco
 
 def clasificar_pdf(ruta):
     """
     Analiza el PDF y determina si es informe, mosaico o VR.
-    - Informe: contiene 'Nombre:' y 'FECHA:'
-    - VR: tiene píxeles a color (R, G, B distintos)
-    - Mosaico: escala de grises
+    - Informe: texto con etiquetas de paciente y fecha (ver es_informe)
+    - VR: imagen con color (R, G, B distintos)
+    - Mosaico: imagen en escala de grises
     """
     try:
         with pdfplumber.open(ruta) as pdf:
             texto = pdf.pages[0].extract_text() or ""
+            num_paginas = len(pdf.pages)
 
         # Primero verificar si es informe
         if es_informe(texto):
             return "informe"
 
-        # Usar pypdf para extraer imágenes y analizar color
-        from pypdf import PdfReader
-        from PIL import Image
-        import numpy as np
-        import io
-
-        reader = PdfReader(ruta)
-        page = reader.pages[0]
-
-        # Intentar extraer imágenes de la página
-        imagenes = []
-        if hasattr(page, 'images'):
-            imagenes = page.images
+        # Extraer imágenes de la primera página y analizar color
+        imagenes = list(PdfReader(ruta).pages[0].images)
 
         if imagenes:
-            # Analizar la primera imagen
-            img_data = imagenes[0].data
-            img = Image.open(io.BytesIO(img_data)).convert("RGB")
+            img = Image.open(io.BytesIO(imagenes[0].data)).convert("RGB")
             arr = np.array(img)
-            datos = arr.reshape(-1, 3)
+            # Diferencia entre el canal más alto y el más bajo de cada píxel
+            diferencia = (arr.max(axis=2).astype(np.int16)
+                          - arr.min(axis=2).astype(np.int16))
+            porcentaje_color = (diferencia > 10).mean()
+            return "vr" if porcentaje_color > 0.005 else "mosaico"
 
-            # Contar píxeles con color significativo
-            umbral = 10
-            pixeles_color = sum(
-                1 for r, g, b in datos
-                if max(int(r), int(g), int(b)) - min(int(r), int(g), int(b)) > umbral
-            )
-            porcentaje_color = pixeles_color / len(datos)
-
-            if porcentaje_color > 0.005:
-                return "vr"
-            else:
-                return "mosaico"
-        else:
-            # Sin imágenes extraíbles, clasificar por número de páginas
-            with pdfplumber.open(ruta) as pdf:
-                num_paginas = len(pdf.pages)
-            return "mosaico" if num_paginas > 1 else "vr"
+        # Sin imágenes extraíbles, clasificar por número de páginas
+        return "mosaico" if num_paginas > 1 else "vr"
 
     except Exception as e:
         import traceback
@@ -205,21 +190,18 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.label_estado.pack(pady=5)
 
     def _seleccionar_informe(self):
-        from tkinter import filedialog
         ruta = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
         if ruta:
             self.informe = ruta
             self._actualizar_panel()
 
     def _seleccionar_mosaicos(self):
-        from tkinter import filedialog
         rutas = filedialog.askopenfilenames(filetypes=[("PDF", "*.pdf")])
         if rutas:
             self.mosaicos.extend(rutas)
             self._actualizar_panel()
 
     def _seleccionar_vr(self):
-        from tkinter import filedialog
         rutas = filedialog.askopenfilenames(filetypes=[("PDF", "*.pdf")])
         if rutas:
             self.vrs.extend(rutas)
@@ -315,21 +297,50 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.frame_contenido.config(bg=self.color_primario)
     
     def _mostrar_about(self):
-        from tkinter import messagebox
         messagebox.showinfo(
             "Acerca de",
             "Generador de Reportes Imagenológicos\n"
-            "Versión 1.0.6\n\n"
+            "Versión 1.0.7\n\n"
             "Desarrollado por Kenny Mejia\n"
             "Bioimagenólogo & Health Data Specialist\n"
             "La Paz, Bolivia\n\n"
             "github.com/Kendrael/pdf_merger"
         )
 
+    def _resolver_ruta_logo(self):
+        """Busca el logo del centro activo (dentro del bundle si está compilado)."""
+        ruta_logo = self.centro["logo"]
+        if os.path.isabs(ruta_logo):
+            return ruta_logo
+        if getattr(sys, 'frozen', False):
+            base = os.path.dirname(sys.executable)
+            for directorio in [base,
+                               os.path.join(base, '..', 'Resources'),
+                               os.path.join(base, '..', 'Frameworks')]:
+                candidato = os.path.join(directorio, ruta_logo)
+                if os.path.exists(candidato):
+                    return candidato
+            return ruta_logo
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), ruta_logo)
+
+    def _pagina_marca_agua(self, logo_png, ancho, alto):
+        """Devuelve una página PDF con el logo centrado y muy sutil."""
+        buf = io.BytesIO()
+        c = rl_canvas.Canvas(buf, pagesize=(ancho, alto))
+        c.setFillAlpha(0.06)
+        tam = min(ancho, alto) * 0.6
+        c.drawImage(ImageReader(io.BytesIO(logo_png)),
+                    (ancho - tam) / 2, (alto - tam) / 2,
+                    width=tam, height=tam,
+                    preserveAspectRatio=True, mask='auto')
+        c.save()
+        buf.seek(0)
+        return PdfReader(buf).pages[0]
+
     def _generar(self):
         # Forzar directorio de trabajo a home del usuario
         os.chdir(os.path.expanduser("~"))
-        
+
         if not self.informe:
             messagebox.showwarning("Atención", "No se detectó ningún informe.")
             return
@@ -337,15 +348,14 @@ class AplicacionPDF(TkinterDnD.Tk):
         self.label_estado.config(text="Extrayendo datos del informe...")
         self.update()
 
+        ruta_caratula_temp = os.path.join(os.path.expanduser("~"), "_caratula_temp.pdf")
+
         try:
             datos = extraer_datos(self.informe)
             nombre = datos["nombre"]
             fecha = datos["fecha"]
 
             # Generar carátula temporal
-            import tempfile
-            temp_dir = os.path.expanduser("~")
-            ruta_caratula_temp = os.path.join(temp_dir, "_caratula_temp.pdf")
             generar_caratula(
                 ruta_salida=ruta_caratula_temp,
                 nombre_paciente=nombre.upper(),
@@ -356,7 +366,6 @@ class AplicacionPDF(TkinterDnD.Tk):
 
             # Nombre y ubicación del archivo final
             nombre_archivo = f"{nombre.replace(' ', '_')}_{fecha}.pdf"
-            from tkinter import filedialog
             ruta_final = filedialog.asksaveasfilename(
                 initialfile=nombre_archivo,
                 defaultextension=".pdf",
@@ -367,73 +376,31 @@ class AplicacionPDF(TkinterDnD.Tk):
                 self.label_estado.config(text="")
                 return
 
-            # Unir en orden: carátula → informe → mosaicos → VR
             self.label_estado.config(text="Uniendo archivos...")
             self.update()
 
-            from pypdf import PdfWriter, PdfReader
+            # Logo para la marca de agua (se prepara una sola vez)
+            ruta_logo = self._resolver_ruta_logo()
+            logo_png = None
+            if ruta_logo and os.path.exists(ruta_logo):
+                logo_png = remover_fondo_blanco(ruta_logo).getvalue()
+
+            # Unir en orden: carátula → informe → mosaicos → VR
+            # La marca de agua solo va en las páginas del informe
             writer = PdfWriter()
-
-            for ruta in [ruta_caratula_temp, self.informe] + self.mosaicos + self.vrs:
-                if ruta and os.path.exists(ruta):
-                    reader = PdfReader(ruta)
-                    for pagina in reader.pages:
-                        writer.add_page(pagina)
-
-            # Guardar PDF unido temporalmente
-            ruta_temp_unido = os.path.join(temp_dir, "_temp_unido.pdf")
-            with open(ruta_temp_unido, "wb") as f:
-                writer.write(f)
-
-            # Aplicar marca de agua solo al informe (página 2, índice 1)
-            from pypdf import PdfWriter as PdfWriterFinal, PdfReader as PdfReaderFinal
-            from marca_agua import remover_fondo_blanco
-            from reportlab.pdfgen import canvas as rl_canvas
-            from reportlab.lib.utils import ImageReader
-            import io
-
-            reader_temp = PdfReaderFinal(ruta_temp_unido)
-            writer_final = PdfWriterFinal()
-
-            n_informe = len(PdfReaderFinal(self.informe).pages)
-            for i, pagina in enumerate(reader_temp.pages):
-                if 1 <= i <= n_informe:
-                    ancho = float(pagina.mediabox.width)
-                    alto = float(pagina.mediabox.height)
-                    buf = io.BytesIO()
-                    c = rl_canvas.Canvas(buf, pagesize=(ancho, alto))
-                    c.setFillAlpha(0.06)
-                    ruta_logo = self.centro["logo"]
-                    if not os.path.isabs(ruta_logo):
-                        import sys
-                        if getattr(sys, 'frozen', False):
-                            base = os.path.dirname(sys.executable)
-                            for directorio in [base, os.path.join(base, '..', 'Resources'), os.path.join(base, '..', 'Frameworks')]:
-                                candidato = os.path.join(directorio, ruta_logo)
-                                if os.path.exists(candidato):
-                                    ruta_logo = candidato
-                                    break
-                        else:
-                            ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), ruta_logo)
-                    if ruta_logo and os.path.exists(ruta_logo):
-                        logo_buf = remover_fondo_blanco(ruta_logo)
-                        logo = ImageReader(logo_buf)
-                        tam = min(ancho, alto) * 0.6
-                        x = (ancho - tam) / 2
-                        y = (alto - tam) / 2
-                        c.drawImage(logo, x, y, width=tam, height=tam,
-                                   preserveAspectRatio=True, mask='auto')
-                    c.save()
-                    buf.seek(0)
-                    pagina_marca = PdfReaderFinal(buf).pages[0]
-                    pagina.merge_page(pagina_marca)
-                writer_final.add_page(pagina)
+            archivos = [ruta_caratula_temp, self.informe] + self.mosaicos + self.vrs
+            for ruta in archivos:
+                if not (ruta and os.path.exists(ruta)):
+                    continue
+                for pagina in PdfReader(ruta).pages:
+                    if ruta == self.informe and logo_png:
+                        ancho = float(pagina.mediabox.width)
+                        alto = float(pagina.mediabox.height)
+                        pagina.merge_page(self._pagina_marca_agua(logo_png, ancho, alto))
+                    writer.add_page(pagina)
 
             with open(ruta_final, "wb") as f:
-                writer_final.write(f)
-
-            os.remove(ruta_caratula_temp)
-            os.remove(ruta_temp_unido)
+                writer.write(f)
 
             self.label_estado.config(
                 text=f"✅ Reporte generado: {nombre_archivo}")
@@ -443,6 +410,10 @@ class AplicacionPDF(TkinterDnD.Tk):
             traceback.print_exc()
             messagebox.showerror("Error", str(e))
             self.label_estado.config(text="")
+
+        finally:
+            if os.path.exists(ruta_caratula_temp):
+                os.remove(ruta_caratula_temp)
 
 if __name__ == "__main__":
     app = AplicacionPDF()

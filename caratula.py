@@ -1,5 +1,3 @@
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.units import cm
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
@@ -57,7 +55,6 @@ def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio,
 
     y_paciente = 205.0
     y_estudio  = 175.6
-    y_fecha    = 141.0
 
     # Color del texto: azul oscuro de SIRIX, legible sobre fondo blanco
     c.setFillColor(colors.HexColor("#1A1A1A"))

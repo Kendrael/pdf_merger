@@ -1,6 +1,5 @@
 import pdfplumber
 import re
-from datetime import datetime
 
 FLAGS = re.IGNORECASE | re.MULTILINE
 
