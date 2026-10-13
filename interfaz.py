@@ -4,7 +4,7 @@ from tkinterdnd2 import TkinterDnD, DND_FILES
 import os
 import re
 import pdfplumber
-from extractor import extraer_datos
+from extractor import extraer_datos, es_informe
 from caratula import generar_caratula
 from merger import unir_pdfs
 from config_manager import obtener_centro_activo, cambiar_centro, listar_centros
@@ -21,7 +21,7 @@ def clasificar_pdf(ruta):
             texto = pdf.pages[0].extract_text() or ""
 
         # Primero verificar si es informe
-        if re.search(r'(?i)nombre:', texto) and re.search(r'(?i)fecha:', texto):
+        if es_informe(texto):
             return "informe"
 
         # Usar pypdf para extraer imágenes y analizar color
@@ -64,6 +64,8 @@ def clasificar_pdf(ruta):
             return "mosaico" if num_paginas > 1 else "vr"
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Error clasificando {ruta}: {e}")
         return "desconocido"
 
@@ -346,7 +348,7 @@ class AplicacionPDF(TkinterDnD.Tk):
             ruta_caratula_temp = os.path.join(temp_dir, "_caratula_temp.pdf")
             generar_caratula(
                 ruta_salida=ruta_caratula_temp,
-                nombre_paciente=nombre,
+                nombre_paciente=nombre.upper(),
                 fecha=fecha.replace("_", " "),
                 tipo_estudio=datos["estudio"],
                 nombre_centro=self.centro["nombre"]
@@ -393,8 +395,9 @@ class AplicacionPDF(TkinterDnD.Tk):
             reader_temp = PdfReaderFinal(ruta_temp_unido)
             writer_final = PdfWriterFinal()
 
+            n_informe = len(PdfReaderFinal(self.informe).pages)
             for i, pagina in enumerate(reader_temp.pages):
-                if i == 1:
+                if 1 <= i <= n_informe:
                     ancho = float(pagina.mediabox.width)
                     alto = float(pagina.mediabox.height)
                     buf = io.BytesIO()
@@ -436,6 +439,8 @@ class AplicacionPDF(TkinterDnD.Tk):
                 text=f"✅ Reporte generado: {nombre_archivo}")
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             messagebox.showerror("Error", str(e))
             self.label_estado.config(text="")
 

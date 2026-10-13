@@ -2,63 +2,123 @@ import pdfplumber
 import re
 from datetime import datetime
 
+FLAGS = re.IGNORECASE | re.MULTILINE
+
+# Etiquetas aceptadas (agrega aquí nuevos alias cuando aparezcan)
+ETIQ_NOMBRE = r"(?:nombre(?:\s+del\s+paciente)?|paciente|pcte\.?)"
+ETIQ_FECHA = r"(?:fecha(?:\s+de(?:l)?\s+estudio)?)"
+
+MESES = {
+    "enero": 1, "febrero": 2, "marzo": 3, "abril": 4,
+    "mayo": 5, "junio": 6, "julio": 7, "agosto": 8,
+    "septiembre": 9, "setiembre": 9, "octubre": 10,
+    "noviembre": 11, "diciembre": 12
+}
+MESES_NOMBRE = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+}
+
+
+def es_informe(texto):
+    """
+    True si el texto parece un informe médico.
+    1) Etiqueta de nombre/paciente + etiqueta de fecha al inicio de línea.
+    2) Failsafe: mucho texto con palabras típicas de un informe.
+    """
+    tiene_nombre = re.search(rf"^\s*{ETIQ_NOMBRE}\s*:?\s*\S", texto, FLAGS)
+    tiene_fecha = re.search(rf"\b{ETIQ_FECHA}\s*:?\s*\d", texto, FLAGS)
+    if tiene_nombre and tiene_fecha:
+        return True
+    if len(texto.strip()) > 500 and re.search(
+            r"conclusi[oó]n|descripci[oó]n|hallazgos", texto, re.IGNORECASE):
+        return True
+    return False
+
+
+def _extraer_nombre(texto):
+    # Intento 1: etiqueta con dos puntos, en cualquier parte de la página
+    m = re.search(rf"^\s*{ETIQ_NOMBRE}\s*:\s*(.+)$", texto, FLAGS)
+    # Intento 2: sin dos puntos, solo en las primeras líneas (ej: tabla)
+    if not m:
+        cabecera = "\n".join(texto.splitlines()[:12])
+        m = re.search(rf"^\s*{ETIQ_NOMBRE}\s+(.+)$", cabecera, FLAGS)
+    if not m:
+        return "DESCONOCIDO"
+    nombre = re.split(r"\s{2,}|\t|m[eé]dico", m.group(1), flags=re.IGNORECASE)[0].strip()
+    return nombre if nombre else "DESCONOCIDO"
+
+
+def _extraer_fecha(texto):
+    m = re.search(rf"\b{ETIQ_FECHA}\s*:?\s*(\d.*)$", texto, FLAGS)
+    if not m:
+        return "Fecha_desconocida"
+    linea = m.group(1)
+
+    try:
+        # Formato numérico: 12/04/26, 12.04.2026, 12-04-26
+        num = re.search(r"(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})", linea)
+        if num:
+            dia = int(num.group(1))
+            mes = int(num.group(2))
+            anio = int(num.group(3))
+            if anio < 100:
+                anio += 2000
+            if 1 <= mes <= 12:
+                return f"{dia:02d}_{MESES_NOMBRE[mes]}_{anio}"
+
+        # Formato texto: 9 de octubre de 2026
+        txt = re.search(r"(\d{1,2})\s+de\s+([a-záéíóú]+)\s+(?:de|del)\s+(\d{4})",
+                        linea, re.IGNORECASE)
+        if txt:
+            dia = int(txt.group(1))
+            mes = MESES.get(txt.group(2).lower())
+            if mes:
+                return f"{dia:02d}_{MESES_NOMBRE[mes]}_{txt.group(3)}"
+    except ValueError:
+        pass
+
+    return "Fecha_desconocida"
+
+
+def _extraer_estudio(texto):
+    # Intento 1: línea "Estudio: ..." al inicio de línea (formato anterior)
+    m = re.search(r'^\s*estudio\s*:\s*(.+?)(?:\n\n|\nDatos|\nHallazgos)',
+                  texto, FLAGS | re.DOTALL)
+    if m:
+        return " ".join(m.group(1).strip().split())
+
+    # Intento 2: título sin etiqueta (TOMOGRAFIA DE ..., RESONANCIA ...)
+    m = re.search(
+        r"^\s*((?:tomograf|resonanc|ecograf|radiograf|mamograf|densitometr|angio)\w*.*)$",
+        texto, FLAGS)
+    if m:
+        return " ".join(m.group(1).strip().split())
+
+    return "Estudio Tomográfico"
+
+
 def extraer_datos(ruta_pdf):
     """
-    Abre el informe PDF y extrae el nombre del paciente y la fecha del estudio.
-    Soporta formato estándar (Pages) y formato simplificado (celular).
+    Abre el informe PDF y extrae nombre, fecha y estudio.
     Retorna un diccionario con 'nombre', 'fecha' y 'estudio'.
     """
     with pdfplumber.open(ruta_pdf) as pdf:
-        texto = pdf.pages[0].extract_text()
-
-    # Buscar nombre completo al final del documento (formato estándar)
-    nombre_completo_match = re.search(r'^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]+?)\s*-\s*(?:CT|ECO|RX|\d{1,2}/)', texto, re.MULTILINE)
-    if nombre_completo_match:
-        nombre = nombre_completo_match.group(1).strip()
-    else:
-        # Fallback: buscar después de "Nombre:" o "NOMBRE:"
-        nombre_match = re.search(r'(?i)nombre:\s*(.+?)(?:\n|$)', texto)
-        if nombre_match:
-            nombre = ' '.join(nombre_match.group(1).strip().split())
-        else:
-            nombre = "DESCONOCIDO"
-
-    # Buscar fecha - soporta separadores / o . y año de 2 o 4 dígitos
-    fecha_match = re.search(r'(?i)fecha:\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})', texto)
-    fecha_raw = fecha_match.group(1).strip() if fecha_match else None
-
-    if fecha_raw:
-        fecha_normalizada = fecha_raw.replace(".", "/")
-        partes = fecha_normalizada.split("/")
-        dia = partes[0].zfill(2)
-        mes_num = int(partes[1])
-        anio = partes[2] if len(partes[2]) == 4 else f"20{partes[2]}"
-        meses = {
-            1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
-            5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
-            9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
-        }
-        fecha_formateada = f"{dia}_de_{meses[mes_num]}_de_{anio}"
-    else:
-        fecha_formateada = "Fecha_desconocida"
-
-    # Buscar tipo de estudio
-    estudio_match = re.search(r'(?i)estudio:\s*(.+?)(?:\n\n|\nDatos|\nHallazgos)', texto, re.DOTALL)
-    if estudio_match:
-        estudio = " ".join(estudio_match.group(1).strip().split())
-    else:
-        estudio = "Estudio Tomográfico"
+        texto = pdf.pages[0].extract_text() or ""
 
     return {
-        "nombre": nombre,
-        "fecha": fecha_formateada,
-        "estudio": estudio
+        "nombre": _extraer_nombre(texto),
+        "fecha": _extraer_fecha(texto),
+        "estudio": _extraer_estudio(texto)
     }
 
-# Bloque de prueba - solo corre cuando ejecutamos este archivo directamente
+
+# Bloque de prueba
 if __name__ == "__main__":
     ruta = input("Arrastra el informe PDF aquí y presiona Enter: ").strip().strip('"').strip("'").lstrip("& '")
     datos = extraer_datos(ruta)
     print(f"Nombre extraído: {datos['nombre']}")
     print(f"Fecha extraída:  {datos['fecha']}")
+    print(f"Estudio:         {datos['estudio']}")
     print(f"Nombre de archivo sugerido: {datos['nombre'].replace(' ', '_')}_{datos['fecha']}.pdf")

@@ -86,7 +86,10 @@ def generar_caratula(ruta_salida, nombre_paciente, fecha, tipo_estudio,
     # --- FECHA --- posición dinámica según líneas del estudio
     y_fecha_dinamica = y_linea - 6
     partes = fecha.split(" ")
-    fecha_display = f"{partes[0]} de {partes[1]} de {partes[2]}"
+    if len(partes) == 3:
+        fecha_display = f"{partes[0]} de {partes[1]} de {partes[2]}"
+    else:
+        fecha_display = fecha
     c.setFont("Helvetica-Bold", 9)
     c.drawString(x_texto, y_fecha_dinamica, fecha_display)
 
